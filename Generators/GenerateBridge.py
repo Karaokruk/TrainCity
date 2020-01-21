@@ -22,13 +22,13 @@ def generateBridge(matrix, height_map, p1, p2): #generate a bridge between p1 an
 	middlepoint = (int((p1[0]+p2[0])/2),(int((p1[1]+p2[1])/2)))
 	path_bridge1 = getPathBridge(matrix, p1, middlepoint) #first half
 	path_bridge2 = getPathBridge(matrix, p2, middlepoint) #second half
-	
+
 	if utilityFunctions.getManhattanDistance(p1,p2) < 6:
 		buildSmallBridge(matrix, path_bridge1, height_map)
 		buildSmallBridge(matrix, path_bridge2, height_map)
 
 	else:
-		#check if the normal bridge is buildable 
+		#check if the normal bridge is buildable
 		if height_map[min_point[0]][min_point[1]] + len(path_bridge1)*0.5 >= h_bridge:
 			#build cross in the middle of the bridge
 			matrix.setValue(h_bridge, middlepoint[0], middlepoint[1], (43,5))
@@ -98,7 +98,7 @@ def buildBridge(matrix, path_bridge, h_bridge, h_start, normal_bridge):
 			else:
 				matrix.setValue(h_actual, path_bridge[i][0], path_bridge[i][1], (43,5))
 			is_half_block = not is_half_block
-		
+
 		#max height reached
 		else:
 			matrix.setValue(h_bridge, path_bridge[i][0], path_bridge[i][1], (43,5))
@@ -130,13 +130,13 @@ def buildBridge(matrix, path_bridge, h_bridge, h_start, normal_bridge):
 				setIfCorrect(matrix, h_actual, path_bridge[i][0]-x_val, path_bridge[i][1]-z_val, (43,0))
 				setIfCorrect(matrix, h_actual, path_bridge[i][0]+x_val, path_bridge[i][1]+z_val, (43,0))
 			is_half_block = not is_half_block
-		
+
 		#max height reached
 		else:
 			setIfCorrect(matrix, h_bridge, path_bridge[i][0]-x_val, path_bridge[i][1]-z_val, (43,0))
 			setIfCorrect(matrix, h_bridge, path_bridge[i][0]+x_val, path_bridge[i][1]+z_val, (43,0))
 			#Build the barrier and light when the direction is fixed if the bridge is normal
-			if normal_bridge == True and barrierPut == False and len(path_bridge) - i >= 4:
+			if normal_bridge == True and barrierPut == False and len(path_bridge) - i >= 3:
 				if path_bridge[i-1][0] != path_bridge[i][0] != path_bridge[i+1][0]:
 					buildBarrierX(matrix, h_bridge, path_bridge[i:len(path_bridge)])
 					barrierPut = True

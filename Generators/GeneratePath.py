@@ -31,7 +31,6 @@ def generatePath(matrix, path, height_map, pavementBlock = (1,6), baseBlock=(3,0
 		x = block[0]
 		z = block[1]
 		h = height_map[x][z]
-		h = matrix.getMatrixY(h)
 
 		matrix.setValue(h,x,z,pavementBlock)
 		fillUnderneath(matrix, h-1, x, z, pavementBlock)
@@ -39,23 +38,21 @@ def generatePath(matrix, path, height_map, pavementBlock = (1,6), baseBlock=(3,0
 
 		next_block = path[i+1]
 		next_h = height_map[next_block[0]][next_block[1]]
-		next_h = matrix.getMatrixY(h)
 
 		if i!=0:
 			previous_block = path[i-1]
 			previous_h = height_map[previous_block[0]][previous_block[1]]
-			previous_h = matrix.getMatrixY(h)
 
 
 		logging.info("Generating road at point {}, {}, {}".format(h, x, z))
 		logging.info("next_h: {}".format(next_h))
-		
+
 		# check if we are moving in the x axis (so to add a new pavement
 		# on the z-1, z+1 block)
 		if x != next_block[0]:
 
 			# if that side block is walkable
-			if z-1 >= 0 and height_map[x][z-1] != -1 and h-height_map[x][z-1] in [0, 1]: 
+			if z-1 >= 0 and height_map[x][z-1] != -1 and h-height_map[x][z-1] in [0, 1]:
 				matrix.setValue(h,x,z-1,pavementBlock)
 				height_map[x][z-1] = h
 				# try to fill with earth underneath if it's empty
@@ -113,11 +110,9 @@ def generatePath(matrix, path, height_map, pavementBlock = (1,6), baseBlock=(3,0
 		x = block[0]
 		z = block[1]
 		h = height_map[x][z]
-		h = matrix.getMatrixY(h)
 
 		next_block = path[i+1]
 		next_h = height_map[next_block[0]][next_block[1]]
-		next_h = matrix.getMatrixY(next_h)
 
 		orientation = getOrientation(x, z, next_block[0], next_block[1])
 		if abs(h-next_h) > 1:
