@@ -6,11 +6,13 @@ import os
 import RNG
 import logging
 from SpacePartitioning import binarySpacePartitioning, quadtreeSpacePartitioning
-import GenerateHouse 
+import GenerateHouse
 import GenerateBuilding
 import GeneratePath
 import GenerateBridge
 import GenerateTower
+import GenerateFarm
+import GenerateSlopeStructure
 from Earthworks import prepareLot
 import TreeGestion
 
@@ -37,12 +39,13 @@ def perform(level, box, options):
 	simple_height_map = utilityFunctions.getSimpleHeightMap(level,box) #no height = -1 when water block
 	list_trees = TreeGestion.prepareMap(world, simple_height_map) #get a list of all trees and erase them, so we can put some of them back after
 	height_map = utilityFunctions.getHeightMap(level,box)
-	# ==== PARTITIONING OF NEIGHBOURHOODS ==== 
+	#villageDeck = utilityFunctions.generateVillageDeck("city", width, depth)
+	# ==== PARTITIONING OF NEIGHBOURHOODS ====
 	(center, neighbourhoods) = generateCenterAndNeighbourhood(world_space, height_map)
 	all_buildings = []
 
-	# ====  GENERATING CITY CENTER ==== 
-	minimum_h = 50 
+	# ====  GENERATING CITY CENTER ====
+	minimum_h = 50
 	minimum_w = 25
 	mininum_d = 25
 
@@ -73,11 +76,11 @@ def perform(level, box, options):
 				(y_min, y_max, x_min, x_max, z_min, z_max) = (p[0], p[1], p[2],p[3], p[4], p[5])
 				failed_conditions = []
 				cond1 = utilityFunctions.hasValidGroundBlocks(x_min, x_max,z_min,z_max, height_map)
-				if cond1 == False: failed_conditions.append(1) 
+				if cond1 == False: failed_conditions.append(1)
 				cond2 = utilityFunctions.hasMinimumSize(y_min, y_max, x_min, x_max,z_min,z_max, minimum_h, minimum_w, mininum_d)
-				if cond2 == False: failed_conditions.append(2) 
+				if cond2 == False: failed_conditions.append(2)
 				cond3 = utilityFunctions.hasAcceptableSteepness(x_min, x_max, z_min, z_max, height_map, utilityFunctions.getScoreArea_type4, threshold)
-				if cond3 == False: failed_conditions.append(3) 
+				if cond3 == False: failed_conditions.append(3)
 				if cond1 and cond2 and cond3:
 					score = utilityFunctions.getScoreArea_type4(height_map, x_min, x_max, z_min, z_max)
 					valid_partitioning.append((score, p))
@@ -96,7 +99,7 @@ def perform(level, box, options):
 
 		threshold += 1
 		current_try += 1
-	
+
 	logging.info("Final lots ({}) for the City Centre {}: ".format(len(final_partitioning), center))
 	for p in final_partitioning:
 		logging.info("\t{}".format(p))
@@ -105,27 +108,27 @@ def perform(level, box, options):
 		building = generateBuilding(world, partition, height_map, simple_height_map)
 		all_buildings.append(building)
 
-	# ==== GENERATING NEIGHBOURHOODS ==== 
-	
-	minimum_h = 10 
+	# ==== GENERATING NEIGHBOURHOODS ====
+
+	minimum_h = 10
 	minimum_w = 16
 	mininum_d = 16
 
 	iterate = 100
-	maximum_tries = 50
+	maximum_tries = 100
 	current_try = 0
-	minimum_lots = 30
+	minimum_lots = 50
 	available_lots = 0
 	threshold = 1
 	partitioning_list = []
 	final_partitioning = []
-	
+
 	while available_lots < minimum_lots and current_try < maximum_tries:
 		partitioning_list = []
 		for i in range(iterate):
 			for neigh in neighbourhoods:
 				logging.info("Generating {} different partitionings for the neighbourhood {}".format(iterate, neigh))
-				
+
 				if RNG.random() < 0.5:
 					partitioning = binarySpacePartitioning(neigh[0], neigh[1], neigh[2], neigh[3], neigh[4], neigh[5], [])
 				else:
@@ -134,13 +137,13 @@ def perform(level, box, options):
 				valid_partitioning = []
 				for p in partitioning:
 					(y_min, y_max, x_min, x_max, z_min, z_max) = (p[0], p[1], p[2], p[3], p[4], p[5])
-					failed_conditions = [] 
+					failed_conditions = []
 					cond1 = utilityFunctions.hasValidGroundBlocks(x_min, x_max,z_min,z_max, height_map)
-					if cond1 == False: failed_conditions.append(1) 
+					if cond1 == False: failed_conditions.append(1)
 					cond2 = utilityFunctions.hasMinimumSize(y_min, y_max, x_min, x_max,z_min,z_max, minimum_h, minimum_w, mininum_d)
-					if cond2 == False: failed_conditions.append(2) 
+					if cond2 == False: failed_conditions.append(2)
 					cond3 = utilityFunctions.hasAcceptableSteepness(x_min, x_max, z_min, z_max, height_map, utilityFunctions.getScoreArea_type4, threshold)
-					if cond3 == False: failed_conditions.append(3) 
+					if cond3 == False: failed_conditions.append(3)
 					if cond1 and cond2 and cond3:
 						score = utilityFunctions.getScoreArea_type4(height_map, x_min, x_max, z_min, z_max)
 						valid_partitioning.append((score, p))
@@ -150,7 +153,7 @@ def perform(level, box, options):
 
 				partitioning_list.extend(valid_partitioning)
 				logging.info("Generated a partition with {} valid lots and {} invalids ones".format(len(valid_partitioning), len(partitioning)-len(valid_partitioning)))
-	
+
 		temp_partitioning_list.extend(partitioning_list)
 		# order partitions by steepness
 		temp_partitioning_list = sorted(temp_partitioning_list)
@@ -166,46 +169,64 @@ def perform(level, box, options):
 		for p in final_partitioning:
 			logging.info("\t{}".format(p))
 
-	for i in xrange(0, int(len(final_partitioning)*0.75)+1):
+	print("NB of lots : {}".format(len(final_partitioning)))
+	for i in xrange(0, int(len(final_partitioning)*0.40)+1):
 		house = generateHouse(world, final_partitioning[i], height_map, simple_height_map)
 		all_buildings.append(house)
 
-	for i in xrange(int(len(final_partitioning)*0.75)+1, len(final_partitioning)):
-		tower = generateTower(world, final_partitioning[i], height_map, simple_height_map)
-		all_buildings.append(tower)
+	for i in xrange(int(len(final_partitioning)*0.40)+1, int(len(final_partitioning)*0.60)+1):
+		farm = generateFarm(world, final_partitioning[i], height_map)
+		#all_buildings.append(farm)
 
-	# ==== GENERATE PATH MAP  ==== 
- 	# generate a path map that gives the cost of moving to each neighbouring cell
+	for i in xrange(int(len(final_partitioning)*0.60)+1, len(final_partitioning)):
+		slopeStructure = generateSlopeStructure(world, final_partitioning[i], height_map, simple_height_map)
+		#tower = generateTower(world, final_partitioning[i], height_map, simple_height_map)
+		all_buildings.append(slopeStructure)
+
+	#for i in xrange(int(len(final_partitioning)*0.60)+1, len(final_partitioning)):
+	#	rollerCoaster = generateSlopeStructure(world, final_partitioning[i], height_map)
+	#	#all_buildings.append(rollerCoaster)
+	#	if rollerCoaster == 0:
+	#		print("JE SUIS ICI")
+	#		tower = generateTower(world, final_partitioning[i], height_map, simple_height_map)
+	#		all_buildings.append(tower)
+
+	#for i in xrange(int(len(final_partitioning)*0.60)+1, len(final_partitioning)):
+	#	tower = generateTower(world, final_partitioning[i], height_map, simple_height_map)
+	#	all_buildings.append(tower)
+
+	# ==== GENERATE PATH MAP  ====
+	# generate a path map that gives the cost of moving to each neighbouring cell
 	pathMap = utilityFunctions.getPathMap(height_map, width, depth)
 	simple_pathMap = utilityFunctions.getPathMap(simple_height_map, width, depth) #not affected by water
 
-	# ==== CONNECTING BUILDINGS WITH ROADS  ==== 
+	# ==== CONNECTING BUILDINGS WITH ROADS  ====
 	logging.info("Calling MST on {} buildings".format(len(all_buildings)))
 	MST = utilityFunctions.getMST_Manhattan(all_buildings)
-	
+
 	pavementBlockID = 1
 	pavementBlockSubtype = 6
 	for m in MST:
 		p1 = m[1]
 		p2 = m[2]
 
-	 	simple_path = utilityFunctions.simpleAStar(p1.entranceLot, p2.entranceLot, simple_pathMap, simple_height_map) #water and height are not important
-	 	list_end_points = utilityFunctions.findBridgeEndPoints(world, simple_path, simple_height_map)
+		simple_path = utilityFunctions.simpleAStar(p1.entranceLot, p2.entranceLot, simple_pathMap, simple_height_map) #water and height are not important
+		list_end_points = utilityFunctions.findBridgeEndPoints(world, simple_path, simple_height_map)
 
-	 	if len(list_end_points)%2 == 0:
-	 		for i in xrange(0,len(list_end_points),2):
-	 			logging.info("Found water between {} and {}. Generating bridge...".format(list_end_points[i], list_end_points[i+1]))
-	 			GenerateBridge.generateBridge(world, simple_height_map, list_end_points[i], list_end_points[i+1])
+		if len(list_end_points)%2 == 0:
+			for i in xrange(0,len(list_end_points),2):
+				logging.info("Found water between {} and {}. Generating bridge...".format(list_end_points[i], list_end_points[i+1]))
+				GenerateBridge.generateBridge(world, simple_height_map, list_end_points[i], list_end_points[i+1])
 
-	 		list_end_points.insert(0, p1.entranceLot)
-	 		list_end_points.append(p2.entranceLot)
-	 		for i in xrange(0,len(list_end_points),2):
-	 			path = utilityFunctions.aStar(list_end_points[i], list_end_points[i+1], pathMap, height_map)
-	 			logging.info("Found path between {} and {}. Generating road...".format(list_end_points[i], list_end_points[i+1]))
-	 			GeneratePath.generatePath(world, path, height_map, (pavementBlockID, pavementBlockSubtype))
-	 	else:
-	 		path = utilityFunctions.aStar(p1.entranceLot, p2.entranceLot, pathMap, height_map)
-	 		logging.info("Found path between {} and {}. Generating road...".format(p1.entranceLot, p2.entranceLot))
+			list_end_points.insert(0, p1.entranceLot)
+			list_end_points.append(p2.entranceLot)
+			for i in xrange(0,len(list_end_points),2):
+				path = utilityFunctions.aStar(list_end_points[i], list_end_points[i+1], pathMap, height_map)
+				logging.info("Found path between {} and {}. Generating road...".format(list_end_points[i], list_end_points[i+1]))
+				GeneratePath.generatePath(world, path, height_map, (pavementBlockID, pavementBlockSubtype))
+		else:
+			path = utilityFunctions.aStar(p1.entranceLot, p2.entranceLot, pathMap, height_map)
+			logging.info("Found path between {} and {}. Generating road...".format(p1.entranceLot, p2.entranceLot))
 			GeneratePath.generatePath(world, path, height_map, (pavementBlockID, pavementBlockSubtype))
 
 	# ==== PUT BACK UNTOUCHED TREES ====
@@ -226,7 +247,7 @@ def generateCenterAndNeighbourhood(space, height_map):
 
 def generateBuilding(matrix, p, height_map, simple_height_map):
 
-	h = prepareLot(matrix, p, height_map)
+	h = prepareLot(matrix, p, height_map, (43, 0))
 	building = GenerateBuilding.generateBuilding(matrix, h, p[1],p[2],p[3], p[4], p[5])
 	utilityFunctions.updateHeightMap(height_map, p[2]+1, p[3]-2, p[4]+1, p[5]-2, -1)
 	utilityFunctions.updateHeightMap(simple_height_map, p[2]+1, p[3]-2, p[4]+1, p[5]-2, -1)
@@ -240,8 +261,8 @@ def generateHouse(matrix, p, height_map, simple_height_map):
 		for z in range(p[4], p[5]):
 			line += str(height_map[x][z])+" "
 		logging.info(line)
-				
-	h = prepareLot(matrix, p, height_map)
+
+	h = prepareLot(matrix, p, height_map, None)
 
 	logging.info("Terrain after flattening: ")
 	for x in range (p[2], p[3]):
@@ -251,7 +272,7 @@ def generateHouse(matrix, p, height_map, simple_height_map):
 		logging.info(line)
 
 	house = GenerateHouse.generateHouse(matrix, h, p[1],p[2],p[3], p[4], p[5])
-	
+
 	utilityFunctions.updateHeightMap(height_map, p[2]+1, p[3]-1, p[4]+1, p[5]-1, -1)
 	utilityFunctions.updateHeightMap(simple_height_map, p[2]+1, p[3]-1, p[4]+1, p[5]-1, -1)
 
@@ -271,3 +292,24 @@ def generateTower(matrix, p, height_map, simple_height_map):
 	utilityFunctions.updateHeightMap(simple_height_map, tower.buildArea.x_min, tower.buildArea.x_max, tower.buildArea.z_min, tower.buildArea.z_max, -1)
 
 	return tower
+
+def generateFarm(matrix, p, height_map, farmType = None):
+
+	h = prepareLot(matrix, p, height_map, None)
+	building = GenerateFarm.generateFarm(matrix, h, p[1],p[2],p[3], p[4], p[5], farmType)
+	utilityFunctions.updateHeightMap(height_map, p[2]+1, p[3]-2, p[4]+1, p[5]-2, -1)
+	return building
+
+def generateSlopeStructure(matrix, p, height_map, simple_height_map):
+	structure = GenerateSlopeStructure.generateSlopeStructure(matrix, height_map, p[1], p[2], p[3], p[4], p[5])
+	if structure == 0:
+		structure = generateTower(matrix, p, height_map, simple_height_map)
+	return structure
+
+def generateBuildingFromDeck(world, partition, height_map, villageDeck, deckType = "suburb"):
+	type = villageDeck.popCenterDeck() if deckType == "center" else villageDeck.popSuburbDeck()
+	print("Building type to build : {}".format(type))
+	if type == 'h': return generateHouse(world, partition, height_map)
+	if type == 'b': return generateBuilding(world, partition, height_map)
+	if type == 'f': return generateFarm(world, partition, height_map)
+	else:			return None
