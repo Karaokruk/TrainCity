@@ -2,16 +2,16 @@ import logging
 
 class Node():
 
-    def __init__(self, parent=None, position=None):
-        self.parent = parent
-        self.position = position
+	def __init__(self, parent=None, position=None):
+		self.parent = parent
+		self.position = position
 
-        self.g = 0
-        self.h = 0
-        self.f = 0
+		self.g = 0
+		self.h = 0
+		self.f = 0
 
-    def __eq__(self, other):
-        return self.position == other.position
+	def __eq__(self, other):
+		return self.position == other.position
 
 def aStar(p1, p2, pathMap, height_map):
 
@@ -35,7 +35,7 @@ def aStar(p1, p2, pathMap, height_map):
 
 		# Get the current node
 		current_node = sorted(open_dict.values(), key=lambda x: x.f)[0]
-		
+
 		# Pop current off open list, add to closed list
 		open_dict.pop(current_node.position, None)
 		closed_dict[current_node.position] = current_node
@@ -51,7 +51,7 @@ def aStar(p1, p2, pathMap, height_map):
 			return path[::-1] # Return reversed path
 
 		children = []
-		
+
 		for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0)]: # Adjacent squares
 
 			iterations +=1
@@ -78,7 +78,7 @@ def aStar(p1, p2, pathMap, height_map):
 			if pathMap[current_node.position[0]][current_node.position[1]][direction] == -1 and node_position != end_node.position:
 				#logging.info("Failed pathMap test!")
 				continue
-			
+
 			# Append
 			children.append(new_node)
 
@@ -88,7 +88,7 @@ def aStar(p1, p2, pathMap, height_map):
 			direction = getDirectionFromParent(current_node, child)
 			#print("direction from parent ", current_node.position, " = ", direction)
 			g = pathMap[current_node.position[0]][current_node.position[1]][direction]
-			#logging.info("Pathmap value (g): {}".format(g))	
+			#logging.info("Pathmap value (g): {}".format(g))
 
 			# Skip this child if already in the closed list
 			try:
@@ -102,7 +102,7 @@ def aStar(p1, p2, pathMap, height_map):
 			child.h = getManhattanDistance(child.position, end_node.position)
 			child.f = child.g + child.h
 
-			
+
 			# Skip this child if already in the open list
 			try:
 				open_child = open_dict[child.position]
@@ -113,6 +113,7 @@ def aStar(p1, p2, pathMap, height_map):
 			open_dict[child.position] = child
 
 	logging.info("(A*) Finished search, could not found a path between {} and {}, Total iterations; {}".format(p1, p2, iterations))
+	print("(A*) Finished search, could not found a path between {} and {}, Total iterations; {}".format(p1, p2, iterations))
 
 def simpleAStar(p1, p2, pathMap, height_map):
 
@@ -136,7 +137,7 @@ def simpleAStar(p1, p2, pathMap, height_map):
 
 		# Get the current node
 		current_node = sorted(open_dict.values(), key=lambda x: x.f)[0]
-		
+
 		# Pop current off open list, add to closed list
 		open_dict.pop(current_node.position, None)
 		closed_dict[current_node.position] = current_node
@@ -152,7 +153,7 @@ def simpleAStar(p1, p2, pathMap, height_map):
 			return path[::-1] # Return reversed path
 
 		children = []
-		
+
 		for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0)]: # Adjacent squares
 
 			iterations +=1
@@ -179,7 +180,7 @@ def simpleAStar(p1, p2, pathMap, height_map):
 			if pathMap[current_node.position[0]][current_node.position[1]][direction] == -1 and node_position != end_node.position:
 				#logging.info("Failed pathMap test!")
 				continue
-			
+
 			# Append
 			children.append(new_node)
 
@@ -189,7 +190,7 @@ def simpleAStar(p1, p2, pathMap, height_map):
 			direction = getDirectionFromParent(current_node, child)
 			#print("direction from parent ", current_node.position, " = ", direction)
 			g = pathMap[current_node.position[0]][current_node.position[1]][direction]
-			#logging.info("Pathmap value (g): {}".format(g))	
+			#logging.info("Pathmap value (g): {}".format(g))
 
 			# Skip this child if already in the closed list
 			try:
@@ -203,7 +204,7 @@ def simpleAStar(p1, p2, pathMap, height_map):
 			child.h = getManhattanDistance(child.position, end_node.position)
 			child.f = child.g + child.h
 
-			
+
 			# Skip this child if already in the open list
 			try:
 				open_child = open_dict[child.position]
@@ -214,6 +215,7 @@ def simpleAStar(p1, p2, pathMap, height_map):
 			open_dict[child.position] = child
 
 	logging.info("(A*) Finished search, could not found a path between {} and {}, Total iterations; {}".format(p1, p2, iterations))
+	print("(Simple A*) Finished search, could not found a path between {} and {}, Total iterations; {}".format(p1, p2, iterations))
 
 def getManhattanDistance(p1,p2):
 	distance = abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])

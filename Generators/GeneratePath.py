@@ -5,7 +5,23 @@ air_like = [0, 6, 17, 18, 30, 31, 32, 37, 38, 39, 40, 59, 81, 83, 85, 104, 105, 
 ground_like = [1, 2, 3]
 water_like = [8, 9, 10, 11]
 
-def generatePath(matrix, path, height_map, pavementBlock = (1,6), baseBlock=(3,0)):
+PAVEMENT_ID = (1, 6)
+DIRT_ID = (3, 0)
+
+def generatPath_StraightLine(matrix, x_p1, z_p1, x_p2, z_p2, height_map, pavementBlock = PAVEMENT_ID):
+	logging.info("Connecting {} and {}".format((x_p1, z_p1), (x_p2, z_p2)))
+	for x in twoway_range(x_p1, x_p2):
+		h = height_map[x][z_p1]
+		h = matrix.getMatrixY(h)
+		matrix.setValue(h,x,z_p1,pavementBlock)
+
+	for z in twoway_range(z_p1, z_p2):
+		h = height_map[x_p2][z]
+		h = matrix.getMatrixY(h)
+		matrix.setValue(h,x_p2,z, pavementBlock)
+		matrix.setValue(h+1,x_p2,z, (0,0))
+
+def generatePath(matrix, path, height_map, pavementBlock = PAVEMENT_ID, baseBlock=DIRT_ID):
 	def fillUnderneath(matrix, y, x, z, baseBlock):
 		if y < 0: return
 		block = matrix.getValue(y, x, z)

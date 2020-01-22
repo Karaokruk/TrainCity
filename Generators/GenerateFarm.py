@@ -43,8 +43,8 @@ def generateFarm(matrix, h_min, h_max, x_min, x_max, z_min, z_max, farmType):
 def getFarmAreaInsideLot(h_min, h_max, x_min, x_max, z_min, z_max, farmType):
 	farm_size_x = farm_size_z = 0
 	if farmType == None:
-		farm_size_x = RNG.randint(11, 18)
-		farm_size_z = RNG.randint(11, 18)
+		farm_size_x = RNG.randint(11, 16)
+		farm_size_z = RNG.randint(11, 16)
 	elif farmType == "smiley":
 		farm_size_x = farm_size_z = 16
 

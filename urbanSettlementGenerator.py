@@ -210,24 +210,29 @@ def perform(level, box, options):
 		p1 = m[1]
 		p2 = m[2]
 
-		simple_path = utilityFunctions.simpleAStar(p1.entranceLot, p2.entranceLot, simple_pathMap, simple_height_map) #water and height are not important
-		list_end_points = utilityFunctions.findBridgeEndPoints(world, simple_path, simple_height_map)
+		try:
+			simple_path = utilityFunctions.simpleAStar(p1.entranceLot, p2.entranceLot, simple_pathMap, simple_height_map) #water and height are not important
+			list_end_points = utilityFunctions.findBridgeEndPoints(world, simple_path, simple_height_map)
 
-		if len(list_end_points)%2 == 0:
 			for i in xrange(0,len(list_end_points),2):
 				logging.info("Found water between {} and {}. Generating bridge...".format(list_end_points[i], list_end_points[i+1]))
 				GenerateBridge.generateBridge(world, simple_height_map, list_end_points[i], list_end_points[i+1])
-
 			list_end_points.insert(0, p1.entranceLot)
 			list_end_points.append(p2.entranceLot)
 			for i in xrange(0,len(list_end_points),2):
 				path = utilityFunctions.aStar(list_end_points[i], list_end_points[i+1], pathMap, height_map)
 				logging.info("Found path between {} and {}. Generating road...".format(list_end_points[i], list_end_points[i+1]))
 				GeneratePath.generatePath(world, path, height_map, (pavementBlockID, pavementBlockSubtype))
-		else:
+
+		except:
 			path = utilityFunctions.aStar(p1.entranceLot, p2.entranceLot, pathMap, height_map)
-			logging.info("Found path between {} and {}. Generating road...".format(p1.entranceLot, p2.entranceLot))
-			GeneratePath.generatePath(world, path, height_map, (pavementBlockID, pavementBlockSubtype))
+			if path != None:
+				logging.info("Found path between {} and {}. Generating road...".format(p1.entranceLot, p2.entranceLot))
+				GeneratePath.generatePath(world, path, height_map, (pavementBlockID, pavementBlockSubtype))
+			else:
+				logging.info("Couldnt find path between {} and {}. Generating a straight road between them...".format(p1.entranceLot, p2.entranceLot))
+	 			GeneratePath.generatePath_StraightLine(world, p1.entranceLot[1], p1.entranceLot[2], p2.entranceLot[1], p2.entranceLot[2], height_map, (pavementBlockID, pavementBlockSubtype))
+				
 
 	# ==== PUT BACK UNTOUCHED TREES ====
 	TreeGestion.putBackTrees(world, height_map, list_trees) #put back the trees that are not cut buy the building and are not in unwanted places
@@ -301,7 +306,7 @@ def generateFarm(matrix, p, height_map, farmType = None):
 	return building
 
 def generateSlopeStructure(matrix, p, height_map, simple_height_map):
-	structure = GenerateSlopeStructure.generateSlopeStructure(matrix, height_map, p[1], p[2], p[3], p[4], p[5])
+	structure = GenerateSlopeStructure.generateSlopeStructure(matrix, height_map, p[1], p[2], p[3], p[4], p[5], True)
 	if structure == 0:
 		structure = generateTower(matrix, p, height_map, simple_height_map)
 	return structure
