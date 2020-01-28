@@ -2,16 +2,16 @@ import logging
 
 class Node():
 
-	def __init__(self, parent=None, position=None):
-		self.parent = parent
-		self.position = position
+    def __init__(self, parent=None, position=None):
+        self.parent = parent
+        self.position = position
 
-		self.g = 0
-		self.h = 0
-		self.f = 0
+        self.g = 0
+        self.h = 0
+        self.f = 0
 
-	def __eq__(self, other):
-		return self.position == other.position
+    def __eq__(self, other):
+        return self.position == other.position
 
 def aStar(p1, p2, pathMap, height_map):
 
@@ -215,7 +215,7 @@ def simpleAStar(p1, p2, pathMap, height_map):
 			open_dict[child.position] = child
 
 	logging.info("(A*) Finished search, could not found a path between {} and {}, Total iterations; {}".format(p1, p2, iterations))
-	print("(Simple A*) Finished search, could not found a path between {} and {}, Total iterations; {}".format(p1, p2, iterations))
+	print("(A*) Finished search, could not found a path between {} and {}, Total iterations; {}".format(p1, p2, iterations))
 
 def getManhattanDistance(p1,p2):
 	distance = abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])

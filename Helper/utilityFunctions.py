@@ -437,26 +437,25 @@ def getScoreArea_type3(height_map, min_x, max_x, min_z, max_z):
   	return value
 
 def getScoreArea_type4(height_map, min_x, max_x, min_z, max_z):
-	nb_block = (max_x-min_x)*(max_z-min_z)
+	area_surface = (max_x-min_x)*(max_z-min_z)
 	list_height = []
 	for x in range(min_x, max_x+1):
 		for z in range(min_z, max_z+1):
 			list_height.append(height_map[x][z])
+
 	list_height_nb_occurence = []
-	for v in range(min(list_height), max(list_height)+1):
-		nb_occurence = list_height.count(v)
-		if nb_occurence != 0:
-			list_height_nb_occurence.append((v, nb_occurence))
-	most_occured = max(list_height_nb_occurence,key=itemgetter(1))[0]
+	for h in set(list_height):
+		nb_occurence = list_height.count(h)
+		list_height_nb_occurence.append((h, nb_occurence))
+	height_mode = max(list_height_nb_occurence,key=itemgetter(1))[0]
+
 	list_cost_per_height = []
-	for v, n in list_height_nb_occurence:
-		list_cost_per_height.append((v, n, (abs(v-most_occured))))
-	list_cost_percentage = []
-	for v, n, c in list_cost_per_height:
-		list_cost_percentage.append((n, c, int(((100-(n*100/nb_block))*c)/100)))
+	for h, nb in list_height_nb_occurence:
+		list_cost_per_height.append((h, nb, (abs(h-height_mode))))
+
 	score = 0
-	for n, c, v in list_cost_percentage:
-		score += v
+	for h, nb, c in list_cost_per_height:
+		score += c
 	return score
 
 def getHeightCounts(matrix, min_x, max_x, min_z, max_z):
@@ -505,12 +504,12 @@ def removeOverlaping(areas):
 # returns whether or not 2 partitions are colliding, must be in the format
 # (x_min, x_max, z_min, z_max)
 def intersectRect(p1, p2):
-    return not (p2[0] >= p1[1] or p2[1] <= p1[0] or p2[3] <= p1[2] or p2[2] >= p1[3])
+    return not (p2[0] > p1[1] or p2[1] < p1[0] or p2[3] < p1[2] or p2[2] > p1[3])
 
 # returns whether or not 2 partitions are colliding, must be in the format
-# (x_min, x_max, z_min, z_max)
+# (y_min, y_max, x_min, x_max, z_min, z_max)
 def intersectPartitions(p1, p2):
-    return not (p2[2] >= p1[3] or p2[3] <= p1[2] or p2[5] <= p1[4] or p2[4] >= p1[5])
+    return not (p2[2] > p1[3] or p2[3] < p1[2] or p2[5] < p1[4] or p2[4] > p1[5])
 
 def getNonIntersectingPartitions(partitioning):
 	cleaned_partitioning = []
@@ -646,17 +645,16 @@ def getHighestPoint(height_map, x_min, x_max, z_min, z_max):
 def findBridgeEndPoints(matrix, path, height_map): #find if bridges are needed on a path, if so, return the end points of them
 	inWater = False
 	list_bridge_end_points = []
-	for i in range(1, len(path)-1):
+	for i in range(1, len(path)):
 
 		block = path[i]
-		next_b = path[i+1]
 		before_b = path[i-1]
 
 		if inWater == False and matrix.getValue(height_map[block[0]][block[1]], block[0], block[1]) in water_like:
 			list_bridge_end_points.append((before_b[0], before_b[1]))
 			inWater = True
 		if inWater == True and matrix.getValue(height_map[block[0]][block[1]], block[0], block[1]) not in water_like:
-			list_bridge_end_points.append((next_b[0], next_b[1]))
+			list_bridge_end_points.append((block[0], block[1]))
 			inWater = False
 
 	return list_bridge_end_points

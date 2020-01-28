@@ -19,21 +19,21 @@ def generateTower(matrix, x_min, x_max, z_min, z_max, height_map):
 	cleanTowerArea(matrix, door_y-1, h_tower+3, x_min, x_max, z_min, z_max)
 
 	logging.info("Generating tower at area {}".format(tower.buildArea))
-	
+
 	wall = (45,0)
 	floor = wall
 
 	generateWalls(matrix, min_h+1, h_tower, x_min, x_max, z_min, z_max, wall)
 	generateCeiling(matrix, h_tower, x_min, x_max, z_min, z_max)
 
-	
+
 	if tower.orientation == "N":
 		door_x = door_pos[0]
 		door_z = door_pos[1]
 		generateDoor(matrix, door_y, door_x, door_z, (64,9), (64,1))
 		tower.entranceLot = (door_x, door_z-1)
 		matrix.setValue(door_y-1,door_x,door_z-1, (1,6))
-		
+
 	elif tower.orientation == "S":
 		door_x = door_pos[0]
 		door_z = door_pos[1]
@@ -45,14 +45,14 @@ def generateTower(matrix, x_min, x_max, z_min, z_max, height_map):
 		door_x = door_pos[0]
 		door_z = door_pos[1]
 		generateDoor(matrix, door_y, door_x, door_z, (64,8), (64,0))
-		tower.entranceLot = (door_x-1, door_z) 
+		tower.entranceLot = (door_x-1, door_z)
 		matrix.setValue(door_y-1,door_x-1,door_z, (1,6))
 
 	elif tower.orientation == "E":
 		door_x = door_pos[0]
 		door_z = door_pos[1]
 		generateDoor(matrix, door_y, door_x, door_z, (64,9), (64,2))
-		tower.entranceLot = (door_x+1, door_z) 
+		tower.entranceLot = (door_x+1, door_z)
 		matrix.setValue(door_y-1,door_x+1,door_z, (1,6))
 
 	generateFloor(matrix, door_y-1, x_min, x_max, z_min, z_max, floor)
@@ -73,8 +73,8 @@ def getTowerAreaInsideLot(x_min, x_max, z_min, z_max, height_map):
 	score_buildArea = utilityFunctions.getScoreArea_type1(height_map, bx_min, bx_max, bz_min, bz_max)
 
 	#check every other possible area in the parcel to find if there is an area with a worse flatness score
-	for x in range(x_min+1, x_max-tower_size+1):
-		for z in range(z_min+1, z_max-tower_size+1):
+	for x in range(x_min+2, x_max-tower_size):
+		for z in range(z_min+2, z_max-tower_size):
 			nx_min = x
 			nx_max = x + tower_size-1
 			nz_min = z
