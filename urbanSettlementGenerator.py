@@ -179,28 +179,29 @@ def perform(level, box, options):
 
 	logging.info("Building in the neighbourhood")
 	n = 0
-	for i in xrange(0, int(len(final_partitioning)*0.50)+1):
-		house = generateHouse(world, final_partitioning[i], height_map, simple_height_map)
+	for i in xrange(0, int(len(final_partitioning) * 0.50) + 1):
+		house = generateFarm(world, final_partitioning[i], height_map)
 		all_buildings.append(house)
-		logging.info("House number : {} built on lot number {}".format(n+1, i+1))
-		n+=1
+		logging.info("House number : {} built on lot number {}".format(n + 1, i + 1))
+		n += 1
 	n = 0
-	for i in xrange(int(len(final_partitioning)*0.50)+1, int(len(final_partitioning)*0.70)+1):
-		farm = generateFarm(world, final_partitioning[i], height_map)
+	for i in xrange(int(len(final_partitioning) * 0.50) + 1, int(len(final_partitioning) * 0.70) + 1):
+        # generate either a regular farm or a smiley farm
+		farm = generateFarm(world, final_partitioning[i], height_map) if (RNG.randint(0, 2) == 0) else generateFarm(world, final_partitioning[i], height_map, "smiley")
 		all_buildings.append(farm)
-		logging.info("Farm number : {} built on lot number {}".format(n+1, i+1))
-		n+=1
+		logging.info("Farm number : {} built on lot number {}".format(n + 1, i + 1))
+		n += 1
 	n = 0
 	m = 0
 	for i in xrange(int(len(final_partitioning)*0.70)+1, len(final_partitioning)):
 		slopeStructure = generateSlopeStructure(world, final_partitioning[i], height_map, simple_height_map)
 		if slopeStructure.type == "tower":
 			all_buildings.append(slopeStructure)
-			logging.info("Tower number : {} built on lot number {}".format(n+1, i+1))
-			n+=1
+			logging.info("Tower number : {} built on lot number {}".format(n + 1, i + 1))
+			n += 1
 		else:
-			logging.info("RollerCoaster number : {} built on lot number {}".format(m+1, i+1))
-			m+=1
+			logging.info("RollerCoaster number : {} built on lot number {}".format(m + 1, i + 1))
+			m += 1
 
 	# ==== GENERATE PATH MAP  ====
  	# generate a path map that gives the cost of moving to each neighbouring cell
@@ -288,8 +289,8 @@ def generateHouse(matrix, p, height_map, simple_height_map):
 def generateFarm(matrix, p, height_map, farmType = None):
 	logging.info("Generating a farm in lot {}".format(p))
 	h = prepareLot(matrix, p, height_map, None)
-	farm = GenerateFarm.generateFarm(matrix, h, p[1],p[2],p[3], p[4], p[5], farmType)
-	utilityFunctions.updateHeightMap(height_map, p[2]+1, p[3]-2, p[4]+1, p[5]-2, -1)
+	farm = GenerateFarm.generateFarm(matrix, h, p[1], p[2], p[3], p[4], p[5], farmType)
+	utilityFunctions.updateHeightMap(height_map, p[2] + 1, p[3] - 2, p[4] + 1, p[5] - 2, -1)
 	return farm
 
 def generateSlopeStructure(matrix, p, height_map, simple_height_map):

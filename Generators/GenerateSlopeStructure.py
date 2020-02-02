@@ -25,21 +25,12 @@ MAX_INCREASING_LENGTH_TRIES = 6
 
 max_rail_length = 0
 
-## TO DO :
-## - test it on Minecraft  CHECK
-## - taille max des rails sur une seule hauteur  CHECK
-## - lancer l'algo sur tous les highestPoints  CHECK
-## - mettre un coffre  CHECK
-## - fix les 10 positions de rails  CHECK
-## - faire un cercle  CHECK
-## - rendre ca joli ?
-## - make it cleaner lol
-
 ## IMPROVEMENTS IDEAS :
-## - being able to put multiple rails on the same (x, z) (for example when the rails go down to a mine)
+## - being able to put multiple rails on the same (x, z) (for example when the rails are going down a mine)
+## -
 
 def generateSlopeStructure(matrix, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails=False):
-    print("Generating Slope Structure")
+    logging.info("Trying to generate roller coaster")
 
     cleanProperty(matrix, height_map, h_max, x_min, x_max, z_min, z_max)
     #spawnFlowers(matrix, height_map, x_min, x_max, z_min, z_max)
@@ -71,16 +62,17 @@ def generateRollerCoaster(matrix, height_map, h_max, x_min, x_max, z_min, z_max,
 
     previous_max_rail_length = 0
     for HP in HPMap:
-        #print("Trying with highest point : {}".format(HP))
+        logging.info("Attempt to generate roller coaster with highest point : {}".format(HP))
         rollRollerRoll(matrix, height_map, rail_map, 0, 0, MAX_SAME_HEIGHT_RAIL_LENGTH, x_min + 1, x_max - 1, z_min + 1, z_max - 1, HP[0], HP[1], 0)
         if previous_max_rail_length < max_rail_length:
             previous_max_rail_length = max_rail_length
             highestPoint = HP
 
-    #print("Final highest point : {}".format(highestPoint))
+    #logging.info("Final highest point : {}".format(highestPoint))
+
     ## cancel the run if the roller coaster is not long enough
     if max_rail_length < MINIMUM_ROLLER_COASTER_LENGTH:
-        print("too short : {} :(".format(max_rail_length))
+        logging.info("Roller coaster is too short with length : {}, cancelling generation".format(max_rail_length))
         return 0
 
     ## first run
@@ -90,7 +82,7 @@ def generateRollerCoaster(matrix, height_map, h_max, x_min, x_max, z_min, z_max,
 
     ## second run
     for length in range(MAX_SAME_HEIGHT_RAIL_LENGTH, MAX_SAME_HEIGHT_RAIL_LENGTH + MAX_INCREASING_LENGTH_TRIES):
-        print("TRY ANOTHER ONE, railIndex:{}, length:{}".format(railIndex, length))
+        logging.info("Try to connect rails with max same level length : {}".format(length))
         rail_map = cleanRailMap(rail_map, x_max, z_max, railIndex)
         return_value = rollRollerRoll(matrix, height_map, rail_map, 0, 0, length, x_min, x_max, z_min, z_max, highestPoint[0], highestPoint[1], 2, railIndex)
         if return_value != 0:
@@ -137,7 +129,7 @@ def generateRails(matrix, height_map, rail_map, x_min, x_max, z_min, z_max, high
                 rail_orientation = getOrientationFromBinaryIndex(binary_orientation_index)
 
                 ## generate the rail
-                print("Generating a rail (index:{}) in x:{}, z:{}, y:{} with orientation:{}".format(rail_map[x][z], x, z, height_map[x][z], rail_orientation))
+                #logging.info("Generating a rail (index:{}) in x:{}, z:{}, y:{} with orientation:{}".format(rail_map[x][z], x, z, height_map[x][z], rail_orientation))
                 matrix.setValue(height_map[x][z], x, z, OAK_WOOD_ID)
 
                 ## regular rail
@@ -230,9 +222,7 @@ def rollRollerRoll(matrix, height_map, rail_map, rail_length, current_height_rai
     ## Random direction otherwise
     else:
         return_value = choseRandomDirection(matrix, height_map, rail_map, rail_length, current_height_rail_length, max_height_rail_length, x_min, x_max, z_min, z_max, x, z, generatorIndex, railIndex, previous_x, previous_z)
-    #print("return_value : {}".format(return_value))
     if return_value >= 1:
-        #print("generatorIndex: {}, railIndex:{}".format(generatorIndex, return_value))
         rail_map[x][z] = return_value
         if generatorIndex == 1:
             return_value += 1
@@ -251,17 +241,13 @@ def choseRandomDirection(matrix, height_map, rail_map, rail_length, current_heig
         return_value = rollRollerRoll(matrix, height_map, rail_map, rail_length, current_height_rail_length, max_height_rail_length, x_min, x_max, z_min, z_max, x + 1, z, generatorIndex, railIndex, x, z)
     if return_value == 0 and canGenerateRail(matrix, height_map, rail_map, current_height_rail_length, max_height_rail_length, x_min, x_max, z_min, z_max, x, z, x, z + 1):
         return_value = rollRollerRoll(matrix, height_map, rail_map, rail_length, current_height_rail_length, max_height_rail_length, x_min, x_max, z_min, z_max, x, z + 1, generatorIndex, railIndex, x, z)
-    #print("rail_length : {}".format(rail_length))
+    #logging.info("current rail length : {}".format(rail_length))
     if isSameLevel(height_map, x, z, previous_x, previous_z):
         if generatorIndex == 0:
-            #print("D'ABORD rail_length : {}".format(rail_length))
             if rail_length > max_rail_length:
-                #print("on est arrive 1 ; rail_length={}, max_rail_length={}".format(rail_length, max_rail_length))
                 max_rail_length = rail_length
         elif generatorIndex == 1:
-            #print("APRES rail_length : {}, max_rail_length : {}".format(rail_length, max_rail_length))
             if rail_length == max_rail_length:
-                #print("on est arrive 2 ; rail_length={}, max_rail_length={}".format(rail_length, max_rail_length))
                 return_value = railIndex
     if generatorIndex == 2:
         if (hasReachedEnd(height_map, rail_map, x, z, x_min, x_max, z_min, z_max, previous_x, previous_z)):
@@ -276,7 +262,7 @@ def isSameLevel(height_map, x, z, previous_x, previous_z):
     return previous_x != -1 and previous_z != -1 and height_map[previous_x][previous_z] == height_map[x][z]
 
 def hasReachedEnd(height_map, rail_map, x, z, x_min, x_max, z_min, z_max, previous_x, previous_z):
-    #print("Trying to find end at coordinates: x:{}, z:{} with x_min:{}, x_max:{}, z_min:{}, z_max:{}".format(x, z, x_min, x_max, z_min, z_max))
+    #logging.info("Trying to find ending point at coordinates: x:{}, z:{} with x_min:{}, x_max:{}, z_min:{}, z_max:{}".format(x, z, x_min, x_max, z_min, z_max))
     return ((isInBounds(x + 1, z, x_min, x_max, z_min, z_max) and rail_map[x + 1][z] == 2 and height_map[x][z] == height_map[x + 1][z])
             or (isInBounds(x, z + 1, x_min, x_max, z_min, z_max) and rail_map[x][z + 1] == 2 and height_map[x][z] == height_map[x][z + 1])
             or (isInBounds(x - 1, z, x_min, x_max, z_min, z_max) and rail_map[x - 1][z] == 2 and height_map[x][z] == height_map[x - 1][z])
@@ -289,7 +275,6 @@ def canGenerateRail(matrix, height_map, rail_map, current_height_rail_length, ma
             and not isAlreadyRail(matrix, height_map, rail_map, x2, z2))
 
 def areRailsTooLongForThisHeight(current_height_rail_length, max_height_rail_length, x, z):
-    print("x:{}, z:{}, current:{}, max:{}".format(x, z, current_height_rail_length, max_height_rail_length))
     return current_height_rail_length >= max_height_rail_length
 
 def isInBounds(x, z, x_min, x_max, z_min, z_max):
@@ -317,7 +302,6 @@ def highestPointsMap(height_map, x_min, x_max, z_min, z_max):
         for z in range(z_min, z_max):
             if height_map[x][z] == h_max:
                 map.append((x, z))
-    #print("highestPointsMap : {}".format(map))
     return map
 
 def getOrientation():
