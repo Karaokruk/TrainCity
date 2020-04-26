@@ -7,12 +7,13 @@ from collections import defaultdict
 from AStar import aStar
 from AStar import simpleAStar
 from Matrix import Matrix
-from VillageDeck import VillageDeck
+from SettlementDeck import SettlementDeck
 import RNG
 from copy import deepcopy
 import sys
 from operator import itemgetter
 from collections import Counter
+
 
 air_like = [0, 6, 17, 18, 30, 31, 32, 37, 38, 39, 40, 59, 81, 83, 85, 104, 105, 106, 107, 111, 141, 142, 161, 162, 175, 78, 79, 99]
 ground_like = [1, 2, 3]
@@ -255,10 +256,10 @@ def generateMatrix(level, box, width, depth, height):
 	matrix = Matrix(level, box, height, width, depth)
 	return matrix
 
-# generate and return a village in the form of a deck composed with a specific number of buildings
-def generateVillageDeck(type, width, height):
-	villageDeck = VillageDeck(type, width, height)
-	return villageDeck
+# generate and return a settlement in the form of a deck composed with a specific number of buildings
+def generateSettlementDeck(type, width, height):
+	settlementDeck = SettlementDeck(type, width, height)
+	return settlementDeck
 
 # get a subsection of a give arean partition based on the percentage
 def getSubsection(y_min, y_max, x_min, x_max, z_min, z_max, percentage=0.8):
@@ -513,14 +514,14 @@ def intersectPartitions(p1, p2):
 
 def getNonIntersectingPartitions(partitioning):
 	cleaned_partitioning = []
-	for score, partition in partitioning:
+	for (score, partition) in partitioning:
 		intersect = False
-		for valid_partition in cleaned_partitioning:
+		for (score, valid_partition) in cleaned_partitioning:
 			if intersectPartitions(partition, valid_partition):
 				intersect = True
 				break
 		if intersect == False:
-			cleaned_partitioning.append(partition)
+			cleaned_partitioning.append((score, partition))
 	return cleaned_partitioning
 
 # update the minecraft world given a matrix with h,w,d dimensions, and each element in the
@@ -673,3 +674,103 @@ def getBlockFullValue(matrix, h, w, d):
 def mostOccured(l):
     occurence_count = Counter(l)
     return occurence_count.most_common(1)[0][0]
+
+
+IDs = {
+	"air" : 0,
+	"stone" : 1,
+	"grass" : 2,
+	"dirt" : 3,
+	"cobblestone" : 4,
+	"planks" : 5,
+	"water" : 9,
+	"log" : 17,
+	"glass" : 20,
+	"bed" : 26,
+	"golden_rail" : 27,
+	"detector_rail" : 28,
+	"wool" : 35,
+	"flower" : 38,
+	"double_stone_slab" : 43,
+	"stone_slab" : 44,
+	"brick_block" : 45,
+	"bookshelf" : 47,
+	"torch" : 50,
+	"oak_stairs" : 53,
+	"chest" : 54,
+	"crafting_table" : 58,
+	"wheat" : 59,
+	"farmland" : 60,
+	"furnace" : 61,
+	"wooden_door" : 64,
+	"ladder" : 65,
+	"rail" : 66,
+	"stone_stairs" : 67,
+	"redstone_torch" : 76,
+	"oak_fence" : 85,
+	"oak_fence_gate" : 107,
+	"brick_stairs" : 108,
+	"wooden_slab" : 126,
+	"spruce_stairs" : 134,
+	"birch_stairs" : 135,
+	"jungle_stairs" : 136,
+	"carrots" : 141,
+	"potatoes" : 142,
+	"log2" : 162,
+	"acacia_stairs" : 163,
+	"dark_oak_stairs" : 164,
+	"spruce_fence_gate" : 183,
+	"birch_fence_gate" : 184,
+	"jungle_fence_gate" : 185,
+	"dark_oak_fence_gate" : 186,
+	"acacia_fence_gate" : 187,
+	"spruce_fence" : 188,
+	"birch_fence" : 189,
+	"jungle_fence" : 190,
+	"dark_oak_fence" : 191,
+	"acacia_fence" : 192,
+	"spruce_door" : 193,
+	"birch_door" : 194,
+	"jungle_door" : 195,
+	"acacia_door" : 196,
+	"dark_oak_door" : 197,
+	"grass_path" : 208
+}
+
+def getBlockID(name, secondaryID = 0):
+	return (IDs[name], secondaryID)
+
+## Set of blocks for each wood type :
+# 0 -> planks
+# 1 -> log
+# 2 -> slab
+# 3 -> stairs
+# 4 -> door
+# 5 -> fence
+# 6 -> fence_gate
+def createWoodenMaterialsKit(planks, log, slab, stairs, door, fence, fence_gate):
+	return {
+		"planks" : planks,
+		"log" : log,
+		"slab" : slab,
+		"stairs" : stairs,
+		"door" : door,
+		"fence" : fence,
+		"fence_gate" : fence_gate
+	}
+
+wood_IDs = {
+	"oak" :			createWoodenMaterialsKit(getBlockID("planks", 0), getBlockID("log", 0), getBlockID("wooden_slab", 0), getBlockID("oak_stairs", 0), getBlockID("wooden_door", 0), getBlockID("oak_fence", 0), getBlockID("oak_fence_gate", 0)),
+	"spruce" :		createWoodenMaterialsKit(getBlockID("planks", 1), getBlockID("log", 1), getBlockID("wooden_slab", 1), getBlockID("spruce_stairs", 0), getBlockID("spruce_door", 0), getBlockID("spruce_fence", 0), getBlockID("spruce_fence_gate", 0)),
+	"birch" :		createWoodenMaterialsKit(getBlockID("planks", 2), getBlockID("log", 2), getBlockID("wooden_slab", 2), getBlockID("birch_stairs", 0), getBlockID("birch_door", 0), getBlockID("birch_fence", 0), getBlockID("birch_fence_gate", 0)),
+	"jungle" :		createWoodenMaterialsKit(getBlockID("planks", 3), getBlockID("log", 3), getBlockID("wooden_slab", 3), getBlockID("jungle_stairs", 0), getBlockID("jungle_door", 0), getBlockID("jungle_fence", 0), getBlockID("jungle_fence_gate", 0)),
+	"dark_oak" :	createWoodenMaterialsKit(getBlockID("planks", 4), getBlockID("log2", 1), getBlockID("wooden_slab", 4), getBlockID("acacia_stairs", 0), getBlockID("acacia_door", 0), getBlockID("acacia_fence", 0), getBlockID("acacia_fence_gate", 0)),
+	"acacia" :		createWoodenMaterialsKit(getBlockID("planks", 5), getBlockID("log2", 0), getBlockID("wooden_slab", 5), getBlockID("dark_oak_stairs", 0), getBlockID("dark_oak_door", 0), getBlockID("dark_oak_fence", 0), getBlockID("dark_oak_fence_gate", 0))
+}
+
+structure_scores = {
+	"house" : 4,
+	"farm" : 2,
+	"building" : 5,
+	"slope structure" : 100
+}

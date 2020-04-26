@@ -14,12 +14,12 @@ def generatePath_StraightLine(matrix, x_p1, z_p1, x_p2, z_p2, height_map, paveme
 		pavement_Block = (1, 6)
 		light_Pillar = (139,0)
 
-	for x in twoway_range(x_p1, x_p2):
+	for x in utilityFunctions.twoway_range(x_p1, x_p2):
 		h = height_map[x][z_p1]
 		h = matrix.getMatrixY(h)
 		matrix.setValue(h,x,z_p1,pavement_Block)
 
-	for z in twoway_range(z_p1, z_p2):
+	for z in utilityFunctions.twoway_range(z_p1, z_p2):
 		h = height_map[x_p2][z]
 		h = matrix.getMatrixY(h)
 		matrix.setValue(h,x_p2,z, pavement_Block)

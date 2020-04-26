@@ -1,21 +1,8 @@
-import random
 import RNG
 import logging
 import utilityFunctions as utilityFunctions
-import GenerateTower
 from enum import Enum
 
-AIR_ID = (0, 0)
-GRASS_ID = (2, 0)
-FENCE_ID = (85, 0)
-OAK_WOOD_ID = (17, 0)
-OAK_FENCE_GATE = (107, 0)
-WATER_ID = (8, 0)
-TORCH_ID = (50, 0)
-REDSTONE_TORCH_ID = (76, 0)
-CHEST_ID = (54, 2)
-RAIL_ID = 66
-POWERED_RAIL_ID = 27
 ## Orientation goes from 0 to 9 included (2, 3, 4, 5 -> slopes) (6, 7, 8, 9 -> turns)
 Orientation = Enum("Orientation", "VERTICAL HORIZONTAL NORTH SOUTH WEST EAST NORTH_EAST SOUTH_EAST SOUTH_WEST NORTH_WEST")
 
@@ -29,12 +16,15 @@ max_rail_length = 0
 ## - being able to put multiple rails on the same (x, z) (for example when the rails are going down a mine)
 ## -
 
-def generateSlopeStructure(matrix, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails=False):
+def generateSlopeStructure(matrix, wood_material, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails=False):
     logging.info("Trying to generate roller coaster")
 
     cleanProperty(matrix, height_map, h_max, x_min, x_max, z_min, z_max)
     #spawnFlowers(matrix, height_map, x_min, x_max, z_min, z_max)
-    return_value = generateRollerCoaster(matrix, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails)
+
+    ## Generates the roller coaster
+    wooden_materials_kit = utilityFunctions.wood_IDs[wood_material]
+    return_value = generateRollerCoaster(matrix, wooden_materials_kit, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails)
     if return_value == 0:
         return 0
     slope = utilityFunctions.dotdict()
@@ -48,14 +38,14 @@ def generateSlopeStructure(matrix, height_map, h_max, x_min, x_max, z_min, z_max
 def spawnFlowers(matrix, height_map, x_min, x_max, z_min, z_max):
     for x in range(x_min, x_max):
         for z in range(z_min, z_max):
-            matrix.setValue(height_map[x][z], x, z, GRASS_ID)
-            matrix.setValue(height_map[x][z] + 1, x, z, (38, RNG.randint(0, 9)))
+            matrix.setValue(height_map[x][z], x, z, utilityFunctions.getBlockID("grass"))
+            matrix.setValue(height_map[x][z] + 1, x, z, (utilityFunctions.getBlockID("flower"), RNG.randint(0, 9)))
 
-def generateRollerCoaster(matrix, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails, allowUpdateHeightMap=True):
+def generateRollerCoaster(matrix, wooden_materials_kit, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails, allowUpdateHeightMap=True):
     global max_rail_length
 
     ## set rail_map to 0's
-    rail_map = [[0 for z in range(z_max + 1)] for x in range(x_max + 1)]
+    rail_map = [[-1 for z in range(z_max + 1)] for x in range(x_max + 1)]
 
     HPMap = highestPointsMap(height_map, x_min, x_max, z_min, z_max)
     highestPoint = HPMap[0]
@@ -94,8 +84,8 @@ def generateRollerCoaster(matrix, height_map, h_max, x_min, x_max, z_min, z_max,
     rail_map[highestPoint[0]][highestPoint[1]] = railIndex - 1
 
     ## generate the rails
-    generateRails(matrix, height_map, rail_map, x_min, x_max, z_min, z_max, highestPoint)
-    generateChest(matrix, height_map, rail_map, highestPoint[0], highestPoint[1], x_min, x_max, z_min, z_max)
+    generateRails(matrix, wooden_materials_kit, height_map, rail_map, x_min, x_max, z_min, z_max, highestPoint)
+    generateChest(matrix, wooden_materials_kit, height_map, rail_map, highestPoint[0], highestPoint[1], x_min, x_max, z_min, z_max)
 
     ## reinitialize global variable
     max_rail_length = 0
@@ -115,10 +105,10 @@ def cleanRailMap(rail_map, x_max, z_max, eraseFrom = 1):
     for x in range(x_max + 1):
         for z in range(z_max + 1):
             if rail_map[x][z] == 1 or rail_map[x][z] >= eraseFrom:
-                rail_map[x][z] = 0
+                rail_map[x][z] = -1
     return rail_map
 
-def generateRails(matrix, height_map, rail_map, x_min, x_max, z_min, z_max, highestPoint):
+def generateRails(matrix, wooden_materials_kit, height_map, rail_map, x_min, x_max, z_min, z_max, highestPoint):
     for x in range(x_min, x_max + 1):
         for z in range(z_min, z_max + 1):
             if rail_map[x][z] >= 2:
@@ -130,23 +120,21 @@ def generateRails(matrix, height_map, rail_map, x_min, x_max, z_min, z_max, high
 
                 ## generate the rail
                 #logging.info("Generating a rail (index:{}) in x:{}, z:{}, y:{} with orientation:{}".format(rail_map[x][z], x, z, height_map[x][z], rail_orientation))
-                matrix.setValue(height_map[x][z], x, z, OAK_WOOD_ID)
+                matrix.setValue(height_map[x][z], x, z, wooden_materials_kit["log"])
 
                 ## regular rail
                 if binary_orientation_index < 16:
-                    matrix.setValue(height_map[x][z] + 1, x, z, (RAIL_ID, rail_orientation))
+                    matrix.setValue(height_map[x][z] + 1, x, z, utilityFunctions.getBlockID("rail", rail_orientation))
                 ## powered rail
                 else:
-                    matrix.setValue(height_map[x][z] + 1, x, z, (POWERED_RAIL_ID, rail_orientation))
-                    matrix.setEntity(height_map[x][z] - 1, x, z, REDSTONE_TORCH_ID, "redstone_torch")
+                    matrix.setValue(height_map[x][z] + 1, x, z, utilityFunctions.getBlockID("golden_rail", rail_orientation))
+                    matrix.setEntity(height_map[x][z] - 1, x, z, utilityFunctions.getBlockID("redstone_torch"), "redstone_torch")
 
 
 def isOneOrLessDifferencial(n1, n2):
-    return ((n1 == n2 or n1 == n2 + 1 or n1 == n2 - 1)
+    return ((n1 == n2 + 1 or n1 == n2 - 1)
             or (n1 == 2 and n2 == max_rail_length)
-            or (n2 == 2 and n1 == max_rail_length)
-            or (n1 == max_rail_length and n2 == 2)
-            or (n2 == max_rail_length and n1 == 2))
+            or (n2 == 2 and n1 == max_rail_length))
 
 def getRailOrientation(height_map, rail_map, x, z, x_max, z_max):
     binary_orientation_index = 0
@@ -161,7 +149,6 @@ def getRailOrientation(height_map, rail_map, x, z, x_max, z_max):
     return binary_orientation_index
 
 def getOrientationFromBinaryIndex(binary_orientation_index):
-
     orientations = {
         0: Orientation.HORIZONTAL.value,
         1: Orientation.HORIZONTAL.value,
@@ -170,15 +157,15 @@ def getOrientationFromBinaryIndex(binary_orientation_index):
         4: Orientation.HORIZONTAL.value,
         5: Orientation.HORIZONTAL.value,
         6: Orientation.SOUTH_EAST.value,
-        7: Orientation.HORIZONTAL.value,
+        7: Orientation.HORIZONTAL.value, # should never happen
         8: Orientation.VERTICAL.value,
         9: Orientation.NORTH_WEST.value,
         10: Orientation.VERTICAL.value,
-        11: Orientation.VERTICAL.value,
+        11: Orientation.VERTICAL.value, # should never happen
         12: Orientation.SOUTH_WEST.value,
-        13: Orientation.HORIZONTAL.value,
-        14: Orientation.VERTICAL.value,
-        15: Orientation.NORTH_EAST.value, # default
+        13: Orientation.HORIZONTAL.value, # should never happen
+        14: Orientation.VERTICAL.value, # should never happen
+        15: Orientation.NORTH_EAST.value, # should never happen
         16: Orientation.NORTH.value,
         17: Orientation.EAST.value,
         18: Orientation.SOUTH.value,
@@ -187,21 +174,21 @@ def getOrientationFromBinaryIndex(binary_orientation_index):
 
     return orientations[binary_orientation_index] - 1
 
-def spawnChest(matrix, h, x, z):
+def spawnChest(matrix, wooden_materials_kit, h, x, z, socle = "False"):
     ## generate oak log under chest
-    matrix.setValue(h, x, z, OAK_WOOD_ID)
+    if socle == True: matrix.setValue(h - 1, x, z, wooden_materials_kit["log"])
     ## generate the chest
-    matrix.setEntity(h, x, z, CHEST_ID, "chest")
+    matrix.setEntity(h, x, z, utilityFunctions.getBlockID("chest", 2), "chest")
 
-def generateChest(matrix, height_map, rail_map, x, z, x_min, x_max, z_min, z_max):
+def generateChest(matrix, wooden_materials_kit, height_map, rail_map, x, z, x_min, x_max, z_min, z_max):
     ## check every neighbouring block
     for i in range(x - 1, x + 2):
         for j in range(z - 1, z + 2):
             if isInBounds(i, j, 0, x_max, 0, z_max) and rail_map[i][j] < 2:
-                spawnChest(matrix, height_map[i][j] + 1, i, j)
+                spawnChest(matrix, wooden_materials_kit, height_map[i][j] + 1, i, j, True)
                 return
     ## floating chest if no free block
-    spawnChest(matrix, height_map[x][z] + 3, x, z)
+    spawnChest(matrix, wooden_materials_kit, height_map[x][z] + 3, x, z)
 
 ## Recursive function
 ## @parameter: generatorIndex is 0 for initial run, 1 for final first path, 2 for second run, 3 for final second path
@@ -291,7 +278,7 @@ def cleanProperty(matrix, height_map, h_max, x_min, x_max, z_min, z_max):
     for x in range(x_min, x_max):
         for z in range(z_min, z_max):
             for y in range(height_map[x][z] + 1, h_max):
-                matrix.setValue(y, x, z, AIR_ID)
+                matrix.setValue(y, x, z, utilityFunctions.getBlockID("air"))
 
 def highestPointsMap(height_map, x_min, x_max, z_min, z_max):
     highestPoint = utilityFunctions.getHighestPoint(height_map, x_min, x_max, z_min, z_max)

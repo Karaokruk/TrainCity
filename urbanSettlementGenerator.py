@@ -17,6 +17,21 @@ from Earthworks import prepareLot
 import TreeGestion
 import time
 
+displayName = "Urban Settlement Generator"
+
+inputs = (
+	("University of Tsukuba - Adrien CELERIER - GDMC", "label"),
+	("Generation", True),
+	("Settlement type", ("City",
+						"Village",
+						"City Center",
+						"Amusement Park",
+						"Test",
+						)),
+	("allow Train Line", False),
+	("allow Roller Coasters", True),
+)
+
 # change to INFO if you want a verbose log!
 for handler in logging.root.handlers[:]:
    logging.root.removeHandler(handler)
@@ -32,6 +47,7 @@ def perform(level, box, options):
 	logging.info("BoundingBox coordinates: ({},{}),({},{}),({},{})".format(box.miny, box.maxy, box.minx, box.maxx, box.minz, box.maxz))
 
 	# ==== PREPARATION =====
+	logging.info("Options : {}".format(options))
 	logging.info("Preparation")
 	(width, height, depth) = utilityFunctions.getBoxSize(box)
 	logging.info("Selection box dimensions {}, {}, {}".format(width,height,depth))
@@ -40,10 +56,14 @@ def perform(level, box, options):
 	logging.info("Generating simple height map")
 	simple_height_map = utilityFunctions.getSimpleHeightMap(level,box) #no height = -1 when water like block
 	logging.info("Saving and erasing the trees")
-	list_trees = TreeGestion.prepareMap(world, simple_height_map) #get a list of all trees and erase them, so we can put some of them back after
+	tree_list = TreeGestion.prepareMap(world, simple_height_map) #get a list of all trees and erase them, so we can put some of them back after
 	logging.info("Generating normal height map")
 	height_map = utilityFunctions.getHeightMap(level,box)
-	#villageDeck = utilityFunctions.generateVillageDeck("city", width, depth)
+	logging.info("Preparing settlement deck card")
+	settlementDeck = utilityFunctions.generateSettlementDeck(options["Settlement type"], width, depth)
+	logging.info("Setting the settlement type")
+	tree_counter = TreeGestion.countTreeSpecies(tree_list)
+	logging.info("Counting the occurrence of the different tree species in the area")
 
 	# ==== PARTITIONING OF NEIGHBOURHOODS ====
 	logging.info("Partitioning of the map, getting city center and neighbourhoods")
@@ -98,7 +118,7 @@ def perform(level, box, options):
 			partitioning_list.extend(valid_partitioning)
 			logging.info("Generated a partition with {} valid lots and {} invalids ones".format(len(valid_partitioning), len(partitioning)-len(valid_partitioning)))
 
-		# order partitions by steepness
+		# sort partitions by steepness
 		partitioning_list = sorted(partitioning_list)
 		final_partitioning = utilityFunctions.getNonIntersectingPartitions(partitioning_list)
 
@@ -109,11 +129,14 @@ def perform(level, box, options):
 		current_try += 1
 
 	logging.info("Final lots ({}) for the City Centre {}: ".format(len(final_partitioning), center))
-	for p in final_partitioning:
-		logging.info("\t{}".format(p))
+	for (score, partition) in final_partitioning:
+		logging.info("\t{}".format(partition))
 
-	for partition in final_partitioning:
-		building = generateBuilding(world, partition, height_map, simple_height_map)
+	for (score, partition) in final_partitioning:
+		#building = generateBuilding(world, partition, height_map, simple_height_map)
+		wood_material = TreeGestion.selectWoodFromTreeCounter(tree_counter)
+		logging.info("Wood material used : {}".format(wood_material))
+		building = generateStructureFromDeck(world, score, partition, height_map, simple_height_map, wood_material, settlementDeck, "center")
 		all_buildings.append(building)
 
 	# ==== GENERATING NEIGHBOURHOODS ====
@@ -163,7 +186,8 @@ def perform(level, box, options):
 				logging.info("Generated a partition with {} valid lots and {} invalids ones".format(len(valid_partitioning), len(partitioning)-len(valid_partitioning)))
 
 		temp_partitioning_list.extend(partitioning_list)
-		# order partitions by steepness
+
+		# sort partitions by steepness
 		temp_partitioning_list = sorted(temp_partitioning_list)
 		final_partitioning = utilityFunctions.getNonIntersectingPartitions(temp_partitioning_list)
 
@@ -173,39 +197,46 @@ def perform(level, box, options):
 		threshold += 2
 		current_try += 1
 
-		logging.info("Final lots ({})for the neighbourhood {}: ".format(len(final_partitioning), neigh))
-		for p in final_partitioning:
-			logging.info("\t{}".format(p))
+	logging.info("Final lots ({})for the neighbourhood {}: ".format(len(final_partitioning), neigh))
+	for (score, partition) in final_partitioning:
+		logging.info("\t{}".format(partition))
 
 	logging.info("Building in the neighbourhood")
-	n = 0
-	for i in xrange(0, int(len(final_partitioning) * 0.50) + 1):
-		house = generateFarm(world, final_partitioning[i], height_map)
-		all_buildings.append(house)
-		logging.info("House number : {} built on lot number {}".format(n + 1, i + 1))
-		n += 1
-	n = 0
-	for i in xrange(int(len(final_partitioning) * 0.50) + 1, int(len(final_partitioning) * 0.70) + 1):
-        # generate either a regular farm or a smiley farm
-		farm = generateFarm(world, final_partitioning[i], height_map) if (RNG.randint(0, 2) == 0) else generateFarm(world, final_partitioning[i], height_map, "smiley")
-		all_buildings.append(farm)
-		logging.info("Farm number : {} built on lot number {}".format(n + 1, i + 1))
-		n += 1
-	n = 0
-	m = 0
-	for i in xrange(int(len(final_partitioning)*0.70)+1, len(final_partitioning)):
-		slopeStructure = generateSlopeStructure(world, final_partitioning[i], height_map, simple_height_map)
-		if slopeStructure.type == "tower":
-			all_buildings.append(slopeStructure)
-			logging.info("Tower number : {} built on lot number {}".format(n + 1, i + 1))
-			n += 1
-		else:
-			logging.info("RollerCoaster number : {} built on lot number {}".format(m + 1, i + 1))
-			m += 1
+
+	for (score, partition) in final_partitioning:
+		wood_material = TreeGestion.selectWoodFromTreeCounter(tree_counter)
+		logging.info("Wood material used : {}".format(wood_material))
+		building = generateStructureFromDeck(world, score, partition, height_map, simple_height_map, wood_material, settlementDeck, "neighbourhood")
+		all_buildings.append(building)
+
+	#n = 0
+	#for i in xrange(0, int(len(final_partitioning) * 0.50) + 1):
+	#	house = generateHouse(world, final_partitioning[i], height_map, simple_height_map)
+	#	all_buildings.append(house)
+	#	logging.info("House number : {} built on lot number {}".format(n + 1, i + 1))
+	#	n += 1
+	#n = 0
+	#for i in xrange(int(len(final_partitioning) * 0.50) + 1, int(len(final_partitioning) * 0.70) + 1):
+	#	# generate either a regular farm or a smiley farm
+	#	farm = generateFarm(world, final_partitioning[i], height_map, simple_height_map) if (RNG.randint(0, 2) == 0) else generateFarm(world, final_partitioning[i], height_map, simple_height_map, "smiley")
+	#	all_buildings.append(farm)
+	#	logging.info("Farm number : {} built on lot number {}".format(n + 1, i + 1))
+	#	n += 1
+	#n = 0
+	#m = 0
+	#for i in xrange(int(len(final_partitioning)*0.70)+1, len(final_partitioning)):
+	#	slopeStructure = generateSlopeStructure(world, final_partitioning[i], height_map, simple_height_map)
+	#	if slopeStructure.type == "tower":
+	#		all_buildings.append(slopeStructure)
+	#		logging.info("Tower number : {} built on lot number {}".format(n + 1, i + 1))
+	#		n += 1
+	#	else:
+	#		logging.info("RollerCoaster number : {} built on lot number {}".format(m + 1, i + 1))
+	#		m += 1
 
 	# ==== GENERATE PATH MAP  ====
- 	# generate a path map that gives the cost of moving to each neighbouring cell
- 	logging.info("Generating path map and simple path map")
+	# generate a path map that gives the cost of moving to each neighbouring cell
+	logging.info("Generating path map and simple path map")
 	pathMap = utilityFunctions.getPathMap(height_map, width, depth)
 	simple_pathMap = utilityFunctions.getPathMap(simple_height_map, width, depth) #not affected by water
 
@@ -250,14 +281,18 @@ def perform(level, box, options):
 				GeneratePath.generatePath(world, path, height_map, pavement_Type)
 			else:
 				logging.info("Couldnt find path between {} and {}. Generating a straight road".format(p1.entranceLot, p2.entranceLot))
-	 			GeneratePath.generatePath_StraightLine(world, p1.entranceLot[1], p1.entranceLot[2], p2.entranceLot[1], p2.entranceLot[2], height_map, pavement_Type)
+				#GeneratePath.generatePath_StraightLine(world, p1.entranceLot[1], p1.entranceLot[2], p2.entranceLot[1], p2.entranceLot[2], height_map, pavement_Type)
 
 	# ==== PUT BACK UNTOUCHED TREES ====
 	logging.info("Putting back untouched trees")
-	TreeGestion.putBackTrees(world, height_map, list_trees) #put back the trees that are not cut buy the building and are not in unwanted places
+	TreeGestion.putBackTrees(world, height_map, tree_list) #put back the trees that are not cut buy the building and are not in unwanted places
 
 	# ==== UPDATE WORLD ====
-	world.updateWorld()
+	if options["Generation"] == True:
+		logging.info("Generating the world")
+		world.updateWorld()
+	else:
+		logging.info("Generation set to false, stops here")
 
 def generateCenterAndNeighbourhood(space, height_map):
 	neighbourhoods = []
@@ -278,24 +313,24 @@ def generateBuilding(matrix, p, height_map, simple_height_map):
 	utilityFunctions.updateHeightMap(simple_height_map, p[2]+1, p[3]-1, p[4]+1, p[5]-1, -1)
 	return building
 
-def generateHouse(matrix, p, height_map, simple_height_map):
+def generateHouse(matrix, p, height_map, simple_height_map, wood_material):
 	logging.info("Generating a house in lot {}".format(p))
 	h = prepareLot(matrix, p, height_map, None)
-	house = GenerateHouse.generateHouse(matrix, h, p[1],p[2],p[3], p[4], p[5])
+	house = GenerateHouse.generateHouse(matrix, wood_material, h, p[1], p[2], p[3], p[4], p[5])
 	utilityFunctions.updateHeightMap(height_map, p[2]+1, p[3]-1, p[4]+1, p[5]-1, -1)
 	utilityFunctions.updateHeightMap(simple_height_map, p[2]+1, p[3]-1, p[4]+1, p[5]-1, -1)
 	return house
 
-def generateFarm(matrix, p, height_map, farmType = None):
+def generateFarm(matrix, p, height_map, simple_height_map, wood_material, farmType = None):
 	logging.info("Generating a farm in lot {}".format(p))
 	h = prepareLot(matrix, p, height_map, None)
-	farm = GenerateFarm.generateFarm(matrix, h, p[1], p[2], p[3], p[4], p[5], farmType)
+	farm = GenerateFarm.generateFarm(matrix, wood_material, h, p[1], p[2], p[3], p[4], p[5], farmType)
 	utilityFunctions.updateHeightMap(height_map, p[2] + 1, p[3] - 2, p[4] + 1, p[5] - 2, -1)
 	return farm
 
-def generateSlopeStructure(matrix, p, height_map, simple_height_map):
+def generateSlopeStructure(matrix, p, height_map, simple_height_map, wood_material):
 	logging.info("Trying to generate a RollerCoaster in lot {}".format(p))
-	structure = GenerateSlopeStructure.generateSlopeStructure(matrix, height_map, p[1], p[2], p[3], p[4], p[5])
+	structure = GenerateSlopeStructure.generateSlopeStructure(matrix, wood_material, height_map, p[1], p[2], p[3], p[4], p[5])
 	if structure == False:
 		logging.info("Generating RollerCoaster failed, Generating Tower instead")
 		structure = generateTower(matrix, p, height_map, simple_height_map)
@@ -308,10 +343,20 @@ def generateTower(matrix, p, height_map, simple_height_map):
 	utilityFunctions.updateHeightMap(simple_height_map, tower.buildArea.x_min, tower.buildArea.x_max, tower.buildArea.z_min, tower.buildArea.z_max, -1)
 	return tower
 
-def generateBuildingFromDeck(world, partition, height_map, villageDeck, deckType = "suburb"):
-	type = villageDeck.popCenterDeck() if deckType == "center" else villageDeck.popSuburbDeck()
-	print("Building type to build : {}".format(type))
-	if type == 'h': return generateHouse(world, partition, height_map)
-	if type == 'b': return generateBuilding(world, partition, height_map)
-	if type == 'f': return generateFarm(world, partition, height_map)
-	else:			return None
+def generateStructureFromDeck(world, score, partition, height_map, simple_height_map, wood_material, settlementDeck, deck_type = "neighbourhood"):
+	structure_type = settlementDeck.popDeck(deck_type)
+	spawn_rate = utilityFunctions.structure_scores[structure_type] / (score * 1.0) # turns the result to float
+	while spawn_rate < RNG.random():
+		print("Structure of type : {} has a score too low ({} out of {}).".format(structure_type, utilityFunctions.structure_scores[structure_type], score))
+		print("Picking a new card")
+		settlementDeck.putBackToDeck(deck_type, structure_type)
+		structure_type = settlementDeck.popDeck(deck_type)
+		spawn_rate = utilityFunctions.structure_scores[structure_type] / (score * 1.0) # turns the result to float
+	print("Generating a {} with lot score = {}".format(structure_type, score))
+	if   structure_type == "house" :			return generateHouse(world, partition, height_map, simple_height_map, wood_material)
+	elif structure_type == "building" :			return generateBuilding(world, partition, height_map, simple_height_map)
+	elif structure_type == "farm" :				return generateFarm(world, partition, height_map, simple_height_map, wood_material)
+	elif structure_type == "slope structure" :	return generateSlopeStructure(world, partition, height_map, simple_height_map, wood_material)
+	else:
+		logging.info("Unable to find {} type of building from the settlement deck".format(structure_type))
+		return None

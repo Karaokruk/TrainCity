@@ -35,47 +35,44 @@ def prepareLot(matrix, p, height_map, block):
 # Given the map matrix, a partition (x_min, x_max, z_min, z_max) and a
 # height_map, perform earthworks on this lot by the flattening
 # returns the height in which construction should start
-def flattenPartition(matrix, x_min, x_max, z_min, z_max, height_map, block):
+def flattenPartition(matrix, x_min, x_max, z_min, z_max, height_map, deep_block):
 
 	heightCounts = utilityFunctions.getHeightCounts(height_map, x_min, x_max, z_min, z_max)
 	most_ocurred_height = max(heightCounts, key=heightCounts.get)
 
 	logging.info("Flattening {}".format((x_min, x_max, z_min, z_max)))
 
-	if block == None:
-		block = utilityFunctions.getMostOcurredGroundBlock(matrix, height_map, x_min, x_max, z_min, z_max)
-		if block == (3, 0):
-			block = (2, 0)
-	logging.info("Most occurred ground block: {}".format(block))
+	top_block = deep_block
+	if deep_block == None:
+		top_block = deep_block = utilityFunctions.getMostOcurredGroundBlock(matrix, height_map, x_min, x_max, z_min, z_max)
+	if deep_block == (3, 0):
+		top_block = (2, 0)
+	elif deep_block == (2, 0):
+		deep_block = (3, 0)
+	logging.info("Most occurred ground block: {}".format(deep_block))
 	logging.info("Flattening at height {}".format(most_ocurred_height))
 
 	for x in range(x_min, x_max+1):
 		for z in range(z_min,z_max+1):
-			if height_map[x][z] == most_ocurred_height:
-				# Equal height! No flattening needed
-				# but lets use the base block just in case
-				matrix.setValue(height_map[x][z], x, z, block)
-			if height_map[x][z] != most_ocurred_height:
+			if height_map[x][z] == -1:
+				logging.warning("Flattening invalid area. Position ", x, z, " of height_map is -1. Cannot do earthworks.")
+				continue
 
-				if height_map[x][z] == -1:
-					logging.warning("Flattening invalid area. Position ", x, z, " of height_map is -1. Cannot do earthworks.")
-					continue
+			matrix_height = matrix.getMatrixY(height_map[x][z])
+			desired_matrix_height = matrix.getMatrixY(most_ocurred_height)
 
-				matrix_height = matrix.getMatrixY(height_map[x][z])
-				desired_matrix_height = matrix.getMatrixY(most_ocurred_height)
-
-				if desired_matrix_height > matrix_height:
-					for y in range(matrix_height, desired_matrix_height+1):
-						matrix.setValue(y,x,z, block)
-				else:
-					#update every block between top height and the desired height
-					# when bringing the ground to a lower level, this will have the
-					# effect of e.g. erasing trees that were on top of that block
-					# this may cause some things to be unproperly erased
-					# (e.g. a branch of a tree coming from an nearby block)
-					# but this is probably the best/less complex solution for this
-					for y in range(matrix.height-1, desired_matrix_height, -1):
-						matrix.setValue(y,x,z, 0)
-					matrix.setValue(desired_matrix_height,x,z, block)
+			if desired_matrix_height > matrix_height:
+				for y in range(matrix_height, desired_matrix_height):
+					matrix.setValue(y,x,z, deep_block)
+			else:
+				#update every block between top height and the desired height
+				# when bringing the ground to a lower level, this will have the
+				# effect of e.g. erasing trees that were on top of that block
+				# this may cause some things to be unproperly erased
+				# (e.g. a branch of a tree coming from an nearby block)
+				# but this is probably the best/less complex solution for this
+				for y in range(matrix.height-1, desired_matrix_height, -1):
+					matrix.setValue(y,x,z, 0)
+			matrix.setValue(desired_matrix_height, x, z, top_block)
 
 	return most_ocurred_height

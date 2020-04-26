@@ -4,7 +4,7 @@ from pymclevel import TileEntity
 # Represents the world in Minecraft
 # stores both the pymclevel object as well as the coordinates
 # of the bounding box selected on mcedit
-# stores a matrix the size of the bounding box to be 
+# stores a matrix the size of the bounding box to be
 # manipulated by the filter
 class Matrix:
 
@@ -36,6 +36,7 @@ class Matrix:
 			return self.level.blockAt(x,y,z)
 
 	def setValue(self, y,x,z, value):
+		#print("set matrix value at x:{}, y:{}, z:{}".format(x, y, z))
 		self.matrix[y][x][z] = value
 		self.changed[y][x][z] = True
 
@@ -101,4 +102,3 @@ class Matrix:
 							self.level.setBlockDataAt((int)(x),(int)(y),(int)(z), block[1])
 						else:
 							self.level.setBlockAt((int)(x),(int)(y),(int)(z), block)
-						

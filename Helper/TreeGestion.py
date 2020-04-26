@@ -1,5 +1,6 @@
 import logging
 import utilityFunctions as utilityFunctions
+import RNG
 
 air_like = [0, 6, 17, 18, 30, 31, 32, 37, 38, 39, 40, 59, 81, 83, 85, 104, 105, 106, 107, 111, 141, 142, 161, 162, 175, 78, 79, 99]
 water_like = [8, 9, 10, 11]
@@ -8,19 +9,19 @@ leaf_like = [18]
 
 def prepareMap(matrix, height_map):
 	logging.info("Finding all the trees on the map")
-	list_trees = []
+	tree_list = []
 	for x in range(0, len(height_map)):
 		for z in range(0, len(height_map[0])):
 				if matrix.getValue(height_map[x][z]+1, x, z) in trunk_like: #find all positions of the trunk of the trees that are on the map
 					logging.info("Tree found in {}".format((x, z)))
-					list_trees.append((findFullTree(matrix, height_map, height_map[x][z], x, z), (height_map[x][z]+1, x, z))) #save the positions of all the blocks of the threes in a list
+					tree_list.append((findFullTree(matrix, height_map, height_map[x][z], x, z), (height_map[x][z]+1, x, z))) #save the positions of all the blocks of the threes in a list
 				elif matrix.getValue(height_map[x][z]+1, x, z) == 162: #check if it's an acacia tree
 					logging.info("Acacia tree found in {}".format((x, z)))
-					list_trees.append((findFullAcacia(matrix, height_map, height_map[x][z], x, z), (height_map[x][z]+1, x, z)))
+					tree_list.append((findFullAcacia(matrix, height_map, height_map[x][z], x, z), (height_map[x][z]+1, x, z)))
 
 	logging.info("Erasing all the trees")
-	eraseAllTrees(list_trees, matrix) #erase all the trees
-	return list_trees #return the list so we know where the trees were placed
+	eraseAllTrees(tree_list, matrix) #erase all the trees
+	return tree_list #return the list so we know where the trees were placed
 
 def findFullTree(matrix, height_map, h, xt, zt):
 	tree_block = []
@@ -79,8 +80,8 @@ def addSameLevelTreeBlockToQueue(matrix, h, new_block_queue, visited, tree_block
 			continue
 		visited.append(neighbor_block)
 
-def putBackTrees(matrix, height_map, list_trees): #go through the list saved and see if all the blocks of a tree are valid, if so we put the tree back using the id we saved for each block
-	for tree, origin in list_trees:
+def putBackTrees(matrix, height_map, tree_list): #go through the list saved and see if all the blocks of a tree are valid, if so we put the tree back using the id we saved for each block
+	for tree, origin in tree_list:
 		if checkIfGroundValid(matrix, height_map, tree) == True and checkIfTreeUntouched(matrix, tree) == True: #check validity of a tree saved
 			for h, x, z, i in tree:
 				matrix.setValue(h, x, z, i)
@@ -116,9 +117,9 @@ def checkIfGroundValid(matrix, height_map, tree): #check that the tree is not ab
 				continue
 	return True
 
-def eraseAllTrees(list_trees, matrix): #use a BFS approach to erase all the tree by using their origins as starting nodes
+def eraseAllTrees(tree_list, matrix): #use a BFS approach to erase all the tree by using their origins as starting nodes
 	block_q = []
-	for tree, origin in list_trees:
+	for tree, origin in tree_list:
 		block_q.append(origin)
 		while len(block_q) != 0:
 			actual_block = block_q.pop()
@@ -182,3 +183,47 @@ def addSameLevelAcaciaBlockToQueue(matrix, h, new_block_queue, visited, tree_blo
 		except:
 			continue
 		visited.append(neighbor_block)
+
+def countTreeSpecies(tree_list):
+	count = {"oak" : 0, "spruce" : 0, "birch" : 0, "jungle" : 0, "dark_oak" : 0, "acacia" : 0}
+	log = utilityFunctions.getBlockID("log")
+	log2 = utilityFunctions.getBlockID("log2")
+	for tree in tree_list:
+		for blocks in tree[0]:
+			if blocks[3][0] == log[0]:
+				if blocks[3][1] == 0:
+					count["oak"] += 1
+				elif blocks[3][1] == 1:
+					count["spruce"] += 1
+				elif blocks[3][1] == 2:
+					count["birch"] += 1
+				elif blocks[3][1] == 3:
+					count["jungle"] += 1
+			elif blocks[3][0] == log2[0]:
+				if blocks[3][1] == 0:
+					count["acacia"] += 1
+				elif blocks[3][1] == 1:
+					count["dark_oak"] += 1
+	return count
+
+def getMostOccuredTree(tree_counter):
+	mostOccuredTree = max(tree_counter, key=tree_counter.get)
+	return mostOccuredTree
+
+def getTotalTreeNumber(tree_counter):
+	total_tree_number = 0
+	for tree in tree_counter:
+		total_tree_number += tree_counter[tree]
+	return total_tree_number
+
+def selectWoodFromTreeCounter(tree_counter, default_tree = "oak"):
+	logging.info("Tree counter : {}".format(tree_counter))
+	total_tree_number = getTotalTreeNumber(tree_counter)
+	wood_index = RNG.randint(0, total_tree_number)
+	logging.info("Random wood index : {} out of total tree number : {}".format(wood_index, total_tree_number))
+	counter_index = 0
+	for tree in tree_counter:
+		counter_index += tree_counter[tree]
+		if counter_index >= wood_index:
+			return tree
+	return default_tree

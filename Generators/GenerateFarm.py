@@ -3,21 +3,9 @@ import RNG
 import logging
 import utilityFunctions as utilityFunctions
 
-AIR_ID = (0, 0)
-FENCE_ID = (85, 0)
-OAK_WOOD_ID = (17, 0)
-FARMLAND_ID = (60, 0)
-WATER_ID = (9, 0)
-TORCH_ID = (50, 5)
-WHEAT_ID = (59, 0)
-CARROT_ID = (141, 0)
-POTATO_ID = (142, 0)
-GRASS_PATH_ID = (208, 0)
-OAK_FENCE_GATE_ID = 107
-plants = [WHEAT_ID, CARROT_ID, POTATO_ID]
 PLANT_SPECIES_NUMBER = 3
 
-def generateFarm(matrix, h_min, h_max, x_min, x_max, z_min, z_max, farmType):
+def generateFarm(matrix, wood_material, h_min, h_max, x_min, x_max, z_min, z_max, farmType):
 
 	farm = utilityFunctions.dotdict()
 	farm.type = "farm"
@@ -33,50 +21,39 @@ def generateFarm(matrix, h_min, h_max, x_min, x_max, z_min, z_max, farmType):
 
 	farm.orientation = getOrientation(matrix, farm.lotArea)
 
+	## Generates the farm
+	wooden_materials_kit = utilityFunctions.wood_IDs[wood_material]
 	if farmType == None:
-		generateBasicPattern(matrix, h_min, x_min, x_max, z_min, z_max)
+		generateBasicPattern(matrix, wooden_materials_kit, h_min, x_min, x_max, z_min, z_max)
 	elif farmType == "smiley":
-		generateSmileyPattern(matrix, h_min, x_min, x_max, z_min, z_max)
+		generateSmileyPattern(matrix, wooden_materials_kit, h_min, x_min, x_max, z_min, z_max)
 
 	#create door and entrance path
 	if farm.orientation == "S":
 		door_x = x_max - 2
 		door_z = z_max - 1
 		farm.entranceLot = (door_x, farm.lotArea.z_max)
-		generateEntrance(matrix, 0, h_min, door_x, door_z, door_z + 1, farm.lotArea.z_max + 1)
+		generateEntrance(matrix, wooden_materials_kit, 0, h_min, door_x, door_z, door_z + 1, farm.lotArea.z_max + 1)
 
 	elif farm.orientation == "N":
 		door_x = x_min + 2
 		door_z = z_min + 1
 		farm.entranceLot = (door_x, farm.lotArea.z_min)
-		generateEntrance(matrix, 2, h_min, door_x, door_z, farm.lotArea.z_min, door_z)
+		generateEntrance(matrix, wooden_materials_kit, 2, h_min, door_x, door_z, farm.lotArea.z_min, door_z)
 
 	elif farm.orientation == "W":
 		door_x = x_min + 1
 		door_z = z_max - 2
 		farm.entranceLot = (farm.lotArea.x_min, door_z)
-		generateEntrance(matrix, 1, h_min, door_x, door_z, farm.lotArea.x_min, door_x)
+		generateEntrance(matrix, wooden_materials_kit, 1, h_min, door_x, door_z, farm.lotArea.x_min, door_x)
 
 	elif farm.orientation == "E":
 		door_x = x_max - 1
 		door_z = z_min + 2
 		farm.entranceLot = (farm.lotArea.x_max, door_z)
-		generateEntrance(matrix, 3, h_min, door_x, door_z, door_x + 1, farm.lotArea.x_max + 1)
+		generateEntrance(matrix, wooden_materials_kit, 3, h_min, door_x, door_z, door_x + 1, farm.lotArea.x_max + 1)
 
 	return farm
-
-def generateEntrance(matrix, orientation, h_min, door_x, door_z, min_bound, max_bound):
-	if orientation % 2 == 0:
-		for z in range(min_bound, max_bound):
-			matrix.setValue(h_min, door_x, z, GRASS_PATH_ID)
-			matrix.setValue(h_min, door_x - 1, z, GRASS_PATH_ID)
-			matrix.setValue(h_min, door_x + 1, z, GRASS_PATH_ID)
-	else:
-		for x in range(min_bound, max_bound):
-			matrix.setValue(h_min, x, door_z, GRASS_PATH_ID)
-			matrix.setValue(h_min, x, door_z - 1, GRASS_PATH_ID)
-			matrix.setValue(h_min, x, door_z + 1, GRASS_PATH_ID)
-	matrix.setValue(h_min + 1, door_x, door_z, (OAK_FENCE_GATE_ID, orientation))
 
 def getFarmAreaInsideLot(h_min, h_max, x_min, x_max, z_min, z_max, farmType):
 	farm_size_x = farm_size_z = 0
@@ -102,84 +79,109 @@ def getFarmAreaInsideLot(h_min, h_max, x_min, x_max, z_min, z_max, farmType):
 
 	return (h_min, h_max, x_min, x_max, z_min, z_max)
 
-def generateBasicPattern(matrix, h, x_min, x_max, z_min, z_max):
+def generateEntrance(matrix, wooden_materials_kit, orientation, h_min, door_x, door_z, min_bound, max_bound):
+	grass_pathID = utilityFunctions.getBlockID("grass_path")
+	if orientation % 2 == 0:
+		for z in range(min_bound, max_bound):
+			matrix.setValue(h_min, door_x, z, grass_pathID)
+			matrix.setValue(h_min, door_x - 1, z, grass_pathID)
+			matrix.setValue(h_min, door_x + 1, z, grass_pathID)
+	else:
+		for x in range(min_bound, max_bound):
+			matrix.setValue(h_min, x, door_z, grass_pathID)
+			matrix.setValue(h_min, x, door_z - 1, grass_pathID)
+			matrix.setValue(h_min, x, door_z + 1, grass_pathID)
+	matrix.setValue(h_min + 1, door_x, door_z, (wooden_materials_kit["fence_gate"][0], orientation))
+
+def generateBasicPattern(matrix, wooden_materials_kit, h, x_min, x_max, z_min, z_max, plant = None):
 
 	## FENCES
-	generateFences(matrix, h, x_min + 1, x_max - 1, z_min + 1, z_max - 1)
+	generateFences(matrix, wooden_materials_kit, h, x_min + 1, x_max - 1, z_min + 1, z_max - 1)
 
 	## GROUND & CULTURES
-	# select one random plant for this farm
-	plant = plants[RNG.randint(0, PLANT_SPECIES_NUMBER - 1)]
+	if plant == None:
+		# select one random plant for this farm
+		plants = [utilityFunctions.getBlockID("wheat"), utilityFunctions.getBlockID("carrots"), utilityFunctions.getBlockID("potatoes")]
+		plant = plants[RNG.randint(0, PLANT_SPECIES_NUMBER - 1)]
 	# fill field with dirt and the corresponding plant
+	farmlandID = utilityFunctions.getBlockID("farmland")
 	for x in range(x_min + 3, x_max - 2):
 		for z in range(z_min + 3, z_max - 2):
-			matrix.setValue(h, x, z, FARMLAND_ID)
+			matrix.setValue(h, x, z, farmlandID)
 			matrix.setValue(h + 1, x, z, plant)
 
 	## WATER
+	waterID = utilityFunctions.getBlockID("water")
 	for x in range(x_min + 2, x_max - 1):
-		matrix.setValue(h, x, z_max - 2, WATER_ID)
-		matrix.setValue(h, x, z_min + 2, WATER_ID)
+		matrix.setValue(h, x, z_max - 2, waterID)
+		matrix.setValue(h, x, z_min + 2, waterID)
 	for z in range(z_min + 2, z_max - 1):
-		matrix.setValue(h, x_max - 2, z, WATER_ID)
-		matrix.setValue(h, x_min + 2, z, WATER_ID)
+		matrix.setValue(h, x_max - 2, z, waterID)
+		matrix.setValue(h, x_min + 2, z, waterID)
 
-def generateSmileyPattern(matrix, h, x_min, x_max, z_min, z_max):
+def generateSmileyPattern(matrix, wooden_materials_kit, h, x_min, x_max, z_min, z_max):
 
 	## FENCES
-	generateFences(matrix, h, x_min + 1, x_max - 1, z_min + 1, z_max - 1)
+	generateFences(matrix, wooden_materials_kit, h, x_min + 1, x_max - 1, z_min + 1, z_max - 1)
 
 	## GROUND
+	farmlandID = utilityFunctions.getBlockID("farmland")
+	carrotsID = utilityFunctions.getBlockID("carrots")
 	# fill field with dirt and carrots
 	for x in range(x_min + 3, x_max - 2):
 		for z in range(z_min + 3, z_max - 2):
-			matrix.setValue(h, x, z, FARMLAND_ID)
+			matrix.setValue(h, x, z, farmlandID)
 			matrix.setValue(h + 1, x, z, CARROT_ID)
 
 	## SMILEY
+	wheatID = utilityFunctions.getBlockID("wheat")
+	waterID = utilityFunctions.getBlockID("water")
 	# eyes
 	def generateEye(x, z):
-		matrix.setValue(h + 1, x, z, WHEAT_ID)
-		matrix.setValue(h + 1, x, z + 1, WHEAT_ID)
-		matrix.setValue(h + 1, x + 1, z, WHEAT_ID)
-		matrix.setValue(h, x + 1, z + 1, WATER_ID)
-		matrix.setValue(h + 1, x + 1, z + 1, AIR_ID)
+		matrix.setValue(h + 1, x, z, wheatID)
+		matrix.setValue(h + 1, x, z + 1, wheatID)
+		matrix.setValue(h + 1, x + 1, z, wheatID)
+		matrix.setValue(h, x + 1, z + 1, waterID)
+		matrix.setValue(h + 1, x + 1, z + 1, utilityFunctions.getBlockID("air"))
 	# left eye
 	generateEye(x_min + 5, z_min + 5)
 	# right eye
 	generateEye(x_max - 6, z_min + 5)
 	# mouth
 	for x in range(x_min + 6, x_max - 5):
-		matrix.setValue(h + 1, x, z_max - 4, WHEAT_ID)
-	matrix.setValue(h + 1, x_min + 5, z_max - 5, WHEAT_ID)
-	matrix.setValue(h + 1, x_max - 5, z_max - 5, WHEAT_ID)
-	matrix.setValue(h + 1, x_min + 4, z_max - 6, WHEAT_ID)
-	matrix.setValue(h + 1, x_max - 4, z_max - 6, WHEAT_ID)
+		matrix.setValue(h + 1, x, z_max - 4, wheatID)
+	matrix.setValue(h + 1, x_min + 5, z_max - 5, wheatID)
+	matrix.setValue(h + 1, x_max - 5, z_max - 5, wheatID)
+	matrix.setValue(h + 1, x_min + 4, z_max - 6, wheatID)
+	matrix.setValue(h + 1, x_max - 4, z_max - 6, wheatID)
 
 	## WATER
 	for x in range(x_min + 2, x_max - 1):
-		matrix.setValue(h, x, z_max - 2, WATER_ID)
-		matrix.setValue(h, x, z_min + 2, WATER_ID)
+		matrix.setValue(h, x, z_max - 2, waterID)
+		matrix.setValue(h, x, z_min + 2, waterID)
 	for z in range(z_min + 2, z_max - 1):
-		matrix.setValue(h, x_max - 2, z, WATER_ID)
-		matrix.setValue(h, x_min + 2, z, WATER_ID)
+		matrix.setValue(h, x_max - 2, z, waterID)
+		matrix.setValue(h, x_min + 2, z, waterID)
 
 
-def generateFences(matrix, h, x_min, x_max, z_min, z_max):
+def generateFences(matrix, wooden_materials_kit, h, x_min, x_max, z_min, z_max):
+	oak_logID = wooden_materials_kit["log"]
+	oak_fenceID = wooden_materials_kit["fence"]
+	torchID = utilityFunctions.getBlockID("torch", 5)
 	for x in range(x_min, x_max + 1):
-		matrix.setValue(h, x, z_max, OAK_WOOD_ID)
-		matrix.setValue(h, x, z_min, OAK_WOOD_ID)
-		matrix.setValue(h + 1, x, z_max, FENCE_ID)
-		matrix.setValue(h + 1, x, z_min, FENCE_ID)
+		matrix.setValue(h, x, z_max, oak_logID)
+		matrix.setValue(h, x, z_min, oak_logID)
+		matrix.setValue(h + 1, x, z_max, oak_fenceID)
+		matrix.setValue(h + 1, x, z_min, oak_fenceID)
 	for z in range(z_min, z_max + 1):
-		matrix.setValue(h, x_max, z, OAK_WOOD_ID)
-		matrix.setValue(h, x_min, z, OAK_WOOD_ID)
-		matrix.setValue(h + 1, x_max, z, FENCE_ID)
-		matrix.setValue(h + 1, x_min, z, FENCE_ID)
-	matrix.setValue(h + 2, x_min, z_max, TORCH_ID)
-	matrix.setValue(h + 2, x_min, z_min, TORCH_ID)
-	matrix.setValue(h + 2, x_max, z_max, TORCH_ID)
-	matrix.setValue(h + 2, x_max, z_min, TORCH_ID)
+		matrix.setValue(h, x_max, z, oak_logID)
+		matrix.setValue(h, x_min, z, oak_logID)
+		matrix.setValue(h + 1, x_max, z, oak_fenceID)
+		matrix.setValue(h + 1, x_min, z, oak_fenceID)
+	matrix.setValue(h + 2, x_min, z_max, torchID)
+	matrix.setValue(h + 2, x_min, z_min, torchID)
+	matrix.setValue(h + 2, x_max, z_max, torchID)
+	matrix.setValue(h + 2, x_max, z_min, torchID)
 
 def getOrientation(matrix, area):
 	x_mid = matrix.width/2
@@ -190,15 +192,15 @@ def getOrientation(matrix, area):
 
 	if bx_mid <= x_mid:
 		if bz_mid <= z_mid:
-			#SOUTH, EAST
+			# return SOUTH, EAST
 			return RNG.choice(["S", "E"])
 		elif bz_mid > z_mid:
-			# SOUTH, WEST
+			# return NORTH, EAST
 			return RNG.choice(["N", "E"])
 
 	elif bx_mid > x_mid:
 		if bz_mid <= z_mid:
-			# return NORTH, EAST
+			# return SOUTH, WEST
 			return RNG.choice(["S", "W"])
 		elif bz_mid > z_mid:
 			# return NORTH, WEST
