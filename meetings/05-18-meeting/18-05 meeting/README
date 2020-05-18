@@ -1,0 +1,5 @@
+On today's first 3 screenshots, we can observe two different paths.
+The bottom one is the path based on the height map before smoothing.
+The top one is the path after one smoothing run.
+
+The others screenshots are the path after enough smoothing runs for it to be continuous.

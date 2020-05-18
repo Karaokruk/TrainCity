@@ -286,10 +286,10 @@ def getSubsection(y_min, y_max, x_min, x_max, z_min, z_max, percentage=0.8):
 # remove inner partition from outer and return 4 partitions as the result
 def subtractPartition(outer, inner):
 
-	p1 = (outer[0], outer[1], outer[2], inner[2], outer[4], inner[5])
-	p2 = (outer[0], outer[1], inner[2], outer[3], outer[4], inner[4])
-	p3 = (outer[0], outer[1], inner[3], outer[3], inner[4], outer[5])
-	p4 = (outer[0], outer[1], outer[2], inner[3], inner[5], outer[5])
+	p1 = (outer[0], outer[1], outer[2], inner[2] - 5, outer[4], inner[5] + 5)
+	p2 = (outer[0], outer[1], inner[2] - 5, outer[3], outer[4], inner[4] - 5)
+	p3 = (outer[0], outer[1], inner[3] + 5, outer[3], inner[4] - 5, outer[5])
+	p4 = (outer[0], outer[1], outer[2], inner[3] + 5, inner[5] + 5, outer[5])
 
 	return (p1,p2,p3,p4)
 

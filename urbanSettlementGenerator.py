@@ -13,6 +13,7 @@ import GenerateBridge
 import GenerateTower
 import GenerateFarm
 import GenerateSlopeStructure
+import GenerateDensha
 from Earthworks import prepareLot
 import TreeGestion
 import time
@@ -282,6 +283,10 @@ def perform(level, box, options):
 			else:
 				logging.info("Couldnt find path between {} and {}. Generating a straight road".format(p1.entranceLot, p2.entranceLot))
 				#GeneratePath.generatePath_StraightLine(world, p1.entranceLot[1], p1.entranceLot[2], p2.entranceLot[1], p2.entranceLot[2], height_map, pavement_Type)
+
+	# ==== GENERATE THE DENSHA NETWORK ====
+	densha_partition = (center[1], center[2] - 2, center[3] + 2, center[4] - 2, center[5] + 2)
+	GenerateDensha.generateDensha(world, wood_material, simple_height_map, densha_partition[0], densha_partition[1], densha_partition[2], densha_partition[3], densha_partition[4])
 
 	# ==== PUT BACK UNTOUCHED TREES ====
 	logging.info("Putting back untouched trees")
