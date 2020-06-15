@@ -29,8 +29,7 @@ inputs = (
 						"Amusement Park",
 						"Test",
 						)),
-	("allow Train Line", False),
-	("allow Roller Coasters", True),
+	("allow Train Line", True),
 )
 
 # change to INFO if you want a verbose log!
@@ -65,6 +64,7 @@ def perform(level, box, options):
 	logging.info("Setting the settlement type")
 	tree_counter = TreeGestion.countTreeSpecies(tree_list)
 	logging.info("Counting the occurrence of the different tree species in the area")
+	wood_material = TreeGestion.selectWoodFromTreeCounter(tree_counter)
 
 	# ==== PARTITIONING OF NEIGHBOURHOODS ====
 	logging.info("Partitioning of the map, getting city center and neighbourhoods")
@@ -235,6 +235,14 @@ def perform(level, box, options):
 	#		logging.info("RollerCoaster number : {} built on lot number {}".format(m + 1, i + 1))
 	#		m += 1
 
+	# ==== GENERATE THE DENSHA NETWORK ====
+	if options["allow Train Line"] == True:
+		#wood_material = TreeGestion.selectWoodFromTreeCounter(tree_counter)
+		wood_material = "urban"
+		stations = generateDensha(world, center, height_map, simple_height_map, wood_material, settlementDeck.getNbStations())
+		for station in stations:
+			all_buildings.append(station)
+
 	# ==== GENERATE PATH MAP  ====
 	# generate a path map that gives the cost of moving to each neighbouring cell
 	logging.info("Generating path map and simple path map")
@@ -283,10 +291,6 @@ def perform(level, box, options):
 			else:
 				logging.info("Couldnt find path between {} and {}. Generating a straight road".format(p1.entranceLot, p2.entranceLot))
 				#GeneratePath.generatePath_StraightLine(world, p1.entranceLot[1], p1.entranceLot[2], p2.entranceLot[1], p2.entranceLot[2], height_map, pavement_Type)
-
-	# ==== GENERATE THE DENSHA NETWORK ====
-	densha_partition = (center[1], center[2] - 2, center[3] + 2, center[4] - 2, center[5] + 2)
-	GenerateDensha.generateDensha(world, wood_material, simple_height_map, densha_partition[0], densha_partition[1], densha_partition[2], densha_partition[3], densha_partition[4])
 
 	# ==== PUT BACK UNTOUCHED TREES ====
 	logging.info("Putting back untouched trees")
@@ -347,6 +351,14 @@ def generateTower(matrix, p, height_map, simple_height_map):
 	utilityFunctions.updateHeightMap(height_map, tower.buildArea.x_min, tower.buildArea.x_max, tower.buildArea.z_min, tower.buildArea.z_max, -1)
 	utilityFunctions.updateHeightMap(simple_height_map, tower.buildArea.x_min, tower.buildArea.x_max, tower.buildArea.z_min, tower.buildArea.z_max, -1)
 	return tower
+
+def generateDensha(matrix, center, height_map, simple_height_map, wood_material, nb_stations):
+	densha_partition = (center[0], center[1], center[2] - 2, center[3] + 2, center[4] - 2, center[5] + 2)
+	(pillar_coordinates, stations) = GenerateDensha.generateDensha(matrix, wood_material, nb_stations, height_map, simple_height_map, densha_partition[0], densha_partition[1], densha_partition[2], densha_partition[3], densha_partition[4], densha_partition[5])
+	for (x, z) in pillar_coordinates:
+		utilityFunctions.updateHeightMap(height_map, x, x, z, z, -1)
+		utilityFunctions.updateHeightMap(simple_height_map, x, x, z, z, -1)
+	return stations
 
 def generateStructureFromDeck(world, score, partition, height_map, simple_height_map, wood_material, settlementDeck, deck_type = "neighbourhood"):
 	structure_type = settlementDeck.popDeck(deck_type)

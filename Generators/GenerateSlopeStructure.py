@@ -3,10 +3,7 @@ import logging
 import utilityFunctions as utilityFunctions
 from enum import Enum
 
-## Orientation goes from 0 to 9 included (2, 3, 4, 5 -> slopes) (6, 7, 8, 9 -> turns)
-Orientation = Enum("Orientation", "VERTICAL HORIZONTAL NORTH SOUTH WEST EAST NORTH_EAST SOUTH_EAST SOUTH_WEST NORTH_WEST")
-
-MINIMUM_ROLLER_COASTER_LENGTH = 7
+MINIMUM_ROLLER_COASTER_LENGTH = 20
 MAX_SAME_HEIGHT_RAIL_LENGTH = 5
 MAX_INCREASING_LENGTH_TRIES = 6
 
@@ -16,7 +13,7 @@ max_rail_length = 0
 ## - being able to put multiple rails on the same (x, z) (for example when the rails are going down a mine)
 ## -
 
-def generateSlopeStructure(matrix, wood_material, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails=False):
+def generateSlopeStructure(matrix, wood_material, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails = False):
     logging.info("Trying to generate roller coaster")
 
     cleanProperty(matrix, height_map, h_max, x_min, x_max, z_min, z_max)
@@ -69,7 +66,6 @@ def generateRollerCoaster(matrix, wooden_materials_kit, height_map, h_max, x_min
     rail_map = cleanRailMap(rail_map, x_max, z_max)
     railIndex = rollRollerRoll(matrix, height_map, rail_map, 0, 0, MAX_SAME_HEIGHT_RAIL_LENGTH, x_min + 1, x_max - 1, z_min + 1, z_max - 1, highestPoint[0], highestPoint[1], 1)
 
-
     ## second run
     for length in range(MAX_SAME_HEIGHT_RAIL_LENGTH, MAX_SAME_HEIGHT_RAIL_LENGTH + MAX_INCREASING_LENGTH_TRIES):
         logging.info("Try to connect rails with max same level length : {}".format(length))
@@ -112,8 +108,9 @@ def generateRails(matrix, wooden_materials_kit, height_map, rail_map, x_min, x_m
     for x in range(x_min, x_max + 1):
         for z in range(z_min, z_max + 1):
             if rail_map[x][z] >= 2:
+                #print("x:{} z:{} is {} with max rail length {}".format(x, z, rail_map[x][z], max_rail_length))
                 ## check rail orientation using neighbouring rails
-                binary_orientation_index = getRailOrientation(height_map, rail_map, x, z, x_max, z_max)
+                binary_orientation_index = getRailOrientation(height_map, rail_map, x, z, x_max, z_max, max_rail_length)
 
                 ## set rail orientation
                 rail_orientation = getOrientationFromBinaryIndex(binary_orientation_index)
@@ -131,45 +128,50 @@ def generateRails(matrix, wooden_materials_kit, height_map, rail_map, x_min, x_m
                     matrix.setEntity(height_map[x][z] - 1, x, z, utilityFunctions.getBlockID("redstone_torch"), "redstone_torch")
 
 
-def isOneOrLessDifferencial(n1, n2):
-    return ((n1 == n2 + 1 or n1 == n2 - 1)
-            or (n1 == 2 and n2 == max_rail_length)
-            or (n2 == 2 and n1 == max_rail_length))
+def isOneOrLessDifferencial(n1, n2, end_value):
+    if n1 < 2 or n2 < 2:
+        return False
+    if ((n1 == n2 + 1 or n1 == n2 - 1)
+            or (n1 == 2 and n2 == end_value)
+            or (n2 == 2 and n1 == end_value)):
+        #print("n1 {} n2 {}".format(n1, n2))
+        return True
+    return False
 
-def getRailOrientation(height_map, rail_map, x, z, x_max, z_max):
+def getRailOrientation(height_map, rail_map, x, z, x_max, z_max, end_value):
     binary_orientation_index = 0
-    if isInBounds(x + 1, z, 0, x_max, 0, z_max) and isOneOrLessDifferencial(rail_map[x][z], rail_map[x + 1][z]):
+    if isInBounds(x + 1, z, 0, x_max, 0, z_max) and isOneOrLessDifferencial(rail_map[x][z], rail_map[x + 1][z], end_value):
         binary_orientation_index = 16 if height_map[x][z] + 1 == height_map[x + 1][z] else binary_orientation_index + 1
-    if binary_orientation_index < 16 and isInBounds(x, z + 1, 0, x_max, 0, z_max) and isOneOrLessDifferencial(rail_map[x][z], rail_map[x][z + 1]):
+    if binary_orientation_index < 16 and isInBounds(x, z + 1, 0, x_max, 0, z_max) and isOneOrLessDifferencial(rail_map[x][z], rail_map[x][z + 1], end_value):
         binary_orientation_index = 17 if height_map[x][z] + 1 == height_map[x][z + 1] else binary_orientation_index + 2
-    if binary_orientation_index < 16 and isInBounds(x - 1, z, 0, x_max, 0, z_max) and isOneOrLessDifferencial(rail_map[x][z], rail_map[x - 1][z]):
+    if binary_orientation_index < 16 and isInBounds(x - 1, z, 0, x_max, 0, z_max) and isOneOrLessDifferencial(rail_map[x][z], rail_map[x - 1][z], end_value):
         binary_orientation_index = 18 if height_map[x][z] + 1 == height_map[x - 1][z] else binary_orientation_index + 4
-    if binary_orientation_index < 16 and isInBounds(x, z - 1, 0, x_max, 0, z_max) and isOneOrLessDifferencial(rail_map[x][z], rail_map[x][z - 1]):
+    if binary_orientation_index < 16 and isInBounds(x, z - 1, 0, x_max, 0, z_max) and isOneOrLessDifferencial(rail_map[x][z], rail_map[x][z - 1], end_value):
         binary_orientation_index = 19 if height_map[x][z] + 1 == height_map[x][z - 1] else binary_orientation_index + 8
     return binary_orientation_index
 
 def getOrientationFromBinaryIndex(binary_orientation_index):
     orientations = {
-        0: Orientation.HORIZONTAL.value,
-        1: Orientation.HORIZONTAL.value,
-        2: Orientation.VERTICAL.value,
-        3: Orientation.NORTH_EAST.value,
-        4: Orientation.HORIZONTAL.value,
-        5: Orientation.HORIZONTAL.value,
-        6: Orientation.SOUTH_EAST.value,
-        7: Orientation.HORIZONTAL.value, # should never happen
-        8: Orientation.VERTICAL.value,
-        9: Orientation.NORTH_WEST.value,
-        10: Orientation.VERTICAL.value,
-        11: Orientation.VERTICAL.value, # should never happen
-        12: Orientation.SOUTH_WEST.value,
-        13: Orientation.HORIZONTAL.value, # should never happen
-        14: Orientation.VERTICAL.value, # should never happen
-        15: Orientation.NORTH_EAST.value, # should never happen
-        16: Orientation.NORTH.value,
-        17: Orientation.EAST.value,
-        18: Orientation.SOUTH.value,
-        19: Orientation.WEST.value
+        0: utilityFunctions.Orientation.HORIZONTAL.value,
+        1: utilityFunctions.Orientation.HORIZONTAL.value,
+        2: utilityFunctions.Orientation.VERTICAL.value,
+        3: utilityFunctions.Orientation.NORTH_EAST.value,
+        4: utilityFunctions.Orientation.HORIZONTAL.value,
+        5: utilityFunctions.Orientation.HORIZONTAL.value,
+        6: utilityFunctions.Orientation.SOUTH_EAST.value,
+        7: utilityFunctions.Orientation.HORIZONTAL.value, # should never happen
+        8: utilityFunctions.Orientation.VERTICAL.value,
+        9: utilityFunctions.Orientation.NORTH_WEST.value,
+        10: utilityFunctions.Orientation.VERTICAL.value,
+        11: utilityFunctions.Orientation.VERTICAL.value, # should never happen
+        12: utilityFunctions.Orientation.SOUTH_WEST.value,
+        13: utilityFunctions.Orientation.HORIZONTAL.value, # should never happen
+        14: utilityFunctions.Orientation.VERTICAL.value, # should never happen
+        15: utilityFunctions.Orientation.NORTH_EAST.value, # should never happen
+        16: utilityFunctions.Orientation.NORTH.value,
+        17: utilityFunctions.Orientation.EAST.value,
+        18: utilityFunctions.Orientation.SOUTH.value,
+        19: utilityFunctions.Orientation.WEST.value
     }
 
     return orientations[binary_orientation_index] - 1
@@ -238,7 +240,8 @@ def choseRandomDirection(matrix, height_map, rail_map, rail_length, current_heig
                 return_value = railIndex
     if generatorIndex == 2:
         if (hasReachedEnd(height_map, rail_map, x, z, x_min, x_max, z_min, z_max, previous_x, previous_z)):
-            max_rail_length += rail_length
+            if max_rail_length < railIndex + rail_length - 2:
+                max_rail_length = railIndex + rail_length - 2
             return_value = railIndex + rail_length - 2
     return return_value
 

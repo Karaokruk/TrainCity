@@ -79,6 +79,11 @@ class SettlementDeck:
         print("Buildings in neighbourhood deck : ")
         print('[%s]' % ', '.join(map(str, self.neighbourhoodDeck)))
 
+    def getNbStations(self):
+        if self.size == S:
+            return 2
+        return 4
+
     def getCenterDeck(self):
         return self.centerDeck
 

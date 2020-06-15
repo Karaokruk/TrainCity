@@ -13,6 +13,7 @@ from copy import deepcopy
 import sys
 from operator import itemgetter
 from collections import Counter
+from enum import Enum
 
 
 air_like = [0, 6, 17, 18, 30, 31, 32, 37, 38, 39, 40, 59, 81, 83, 85, 104, 105, 106, 107, 111, 141, 142, 161, 162, 175, 78, 79, 99]
@@ -258,8 +259,7 @@ def generateMatrix(level, box, width, depth, height):
 
 # generate and return a settlement in the form of a deck composed with a specific number of buildings
 def generateSettlementDeck(type, width, height):
-	settlementDeck = SettlementDeck(type, width, height)
-	return settlementDeck
+	return SettlementDeck(type, width, height)
 
 # get a subsection of a give arean partition based on the percentage
 def getSubsection(y_min, y_max, x_min, x_max, z_min, z_max, percentage=0.8):
@@ -583,11 +583,12 @@ def printMatrix(matrix, height, width, depth):
 			print(matrix[h][x])
 
 def twoway_range(start, stop):
-	return range(start, stop+1, 1) if (start <= stop) else range(start, stop-1, -1)
+	return range(start, stop + 1, 1) if (start <= stop) else range(start, stop - 1, -1)
 
 def updateHeightMap(height_map, x_min, x_max, z_min, z_max, height):
-	for x in range(x_min, x_max+1):
-		for z in range(z_min, z_max+1):
+	for x in range(x_min, x_max + 1):
+		for z in range(z_min, z_max + 1):
+			#print("updating height at {}, {}, {}, {}".format(x_min, x_max, z_min, z_max))
 			height_map[x][z] = height
 
 def cleanProperty(matrix, h_min, h_max, x_min, x_max, z_min, z_max):
@@ -683,14 +684,24 @@ IDs = {
 	"dirt" : 3,
 	"cobblestone" : 4,
 	"planks" : 5,
+	"flowing_water" : 8,
 	"water" : 9,
+	"flowing_lava" : 10,
+	"lava" : 11,
 	"log" : 17,
+	"leaves" : 18,
 	"glass" : 20,
 	"bed" : 26,
 	"golden_rail" : 27,
 	"detector_rail" : 28,
+	"web" : 30,
+	"tallgrass" : 31,
+	"deadbush" : 32,
 	"wool" : 35,
+	"yellow_flower" : 37,
 	"flower" : 38,
+	"brown_mushroom" : 39,
+	"red_mushroom" : 40,
 	"double_stone_slab" : 43,
 	"stone_slab" : 44,
 	"brick_block" : 45,
@@ -707,18 +718,34 @@ IDs = {
 	"rail" : 66,
 	"stone_stairs" : 67,
 	"redstone_torch" : 76,
+	"snow" : 78,
+	"ice" : 79,
+	"cactus" : 81,
+	"reeds" : 83,
 	"oak_fence" : 85,
+	"melon_block" : 103,
+	"pumpkin_stem" : 104,
+	"melon_stem" : 105,
+	"vine" : 106,
 	"oak_fence_gate" : 107,
 	"brick_stairs" : 108,
+	"stone_brick_stairs" : 109,
+	"waterlily" : 111,
+	"redstone_lamp" : 123,
 	"wooden_slab" : 126,
 	"spruce_stairs" : 134,
 	"birch_stairs" : 135,
 	"jungle_stairs" : 136,
+	"cobblestone_wall" : 139,
 	"carrots" : 141,
 	"potatoes" : 142,
+	"redstone_block" : 152,
+	"leaves2" : 161,
 	"log2" : 162,
 	"acacia_stairs" : 163,
 	"dark_oak_stairs" : 164,
+	"double_plant" : 175,
+	"daylight_detector_inverted" : 178,
 	"spruce_fence_gate" : 183,
 	"birch_fence_gate" : 184,
 	"jungle_fence_gate" : 185,
@@ -734,7 +761,8 @@ IDs = {
 	"jungle_door" : 195,
 	"acacia_door" : 196,
 	"dark_oak_door" : 197,
-	"grass_path" : 208
+	"grass_path" : 208,
+	"iron_door" : 330
 }
 
 def getBlockID(name, secondaryID = 0):
@@ -762,10 +790,11 @@ def createWoodenMaterialsKit(planks, log, slab, stairs, door, fence, fence_gate)
 wood_IDs = {
 	"oak" :			createWoodenMaterialsKit(getBlockID("planks", 0), getBlockID("log", 0), getBlockID("wooden_slab", 0), getBlockID("oak_stairs", 0), getBlockID("wooden_door", 0), getBlockID("oak_fence", 0), getBlockID("oak_fence_gate", 0)),
 	"spruce" :		createWoodenMaterialsKit(getBlockID("planks", 1), getBlockID("log", 1), getBlockID("wooden_slab", 1), getBlockID("spruce_stairs", 0), getBlockID("spruce_door", 0), getBlockID("spruce_fence", 0), getBlockID("spruce_fence_gate", 0)),
-	"birch" :		createWoodenMaterialsKit(getBlockID("planks", 2), getBlockID("log", 2), getBlockID("wooden_slab", 2), getBlockID("birch_stairs", 0), getBlockID("birch_door", 0), getBlockID("birch_fence", 0), getBlockID("birch_fence_gate", 0)),
+	"birch" :		createWoodenMaterialsKit(getBlockID("planks", 2), getBlockID("stone", 6), getBlockID("wooden_slab", 2), getBlockID("birch_stairs", 0), getBlockID("birch_door", 0), getBlockID("birch_fence", 0), getBlockID("birch_fence_gate", 0)),
 	"jungle" :		createWoodenMaterialsKit(getBlockID("planks", 3), getBlockID("log", 3), getBlockID("wooden_slab", 3), getBlockID("jungle_stairs", 0), getBlockID("jungle_door", 0), getBlockID("jungle_fence", 0), getBlockID("jungle_fence_gate", 0)),
 	"dark_oak" :	createWoodenMaterialsKit(getBlockID("planks", 4), getBlockID("log2", 1), getBlockID("wooden_slab", 4), getBlockID("acacia_stairs", 0), getBlockID("acacia_door", 0), getBlockID("acacia_fence", 0), getBlockID("acacia_fence_gate", 0)),
-	"acacia" :		createWoodenMaterialsKit(getBlockID("planks", 5), getBlockID("log2", 0), getBlockID("wooden_slab", 5), getBlockID("dark_oak_stairs", 0), getBlockID("dark_oak_door", 0), getBlockID("dark_oak_fence", 0), getBlockID("dark_oak_fence_gate", 0))
+	"acacia" :		createWoodenMaterialsKit(getBlockID("planks", 5), getBlockID("log2", 0), getBlockID("wooden_slab", 5), getBlockID("dark_oak_stairs", 0), getBlockID("dark_oak_door", 0), getBlockID("dark_oak_fence", 0), getBlockID("dark_oak_fence_gate", 0)),
+	"urban" :		createWoodenMaterialsKit(getBlockID("double_stone_slab", 5), getBlockID("double_stone_slab", 5), getBlockID("stone_slab", 5), getBlockID("stone_brick_stairs", 0), getBlockID("iron_door", 0), getBlockID("cobblestone_wall", 0), getBlockID("dark_oak_fence_gate", 0))
 }
 
 structure_scores = {
@@ -774,3 +803,6 @@ structure_scores = {
 	"building" : 5,
 	"slope structure" : 100
 }
+
+## Rail orientation goes from 0 to 9 included (2, 3, 4, 5 -> slopes) (6, 7, 8, 9 -> turns)
+Orientation = Enum("Orientation", "VERTICAL HORIZONTAL NORTH SOUTH WEST EAST NORTH_EAST SOUTH_EAST SOUTH_WEST NORTH_WEST")
