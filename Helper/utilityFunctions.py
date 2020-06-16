@@ -798,10 +798,10 @@ wood_IDs = {
 }
 
 structure_scores = {
-	"house" : 4,
-	"farm" : 2,
-	"building" : 5,
-	"slope structure" : 100
+	"house" : 0.4,
+	"farm" : 0.2,
+	"building" : 0.5,
+	"slope structure" : 1
 }
 
 ## Rail orientation goes from 0 to 9 included (2, 3, 4, 5 -> slopes) (6, 7, 8, 9 -> turns)

@@ -250,7 +250,7 @@ def generatePath(matrix, path, height_map, pavement_Type):
 					matrix.setValue(h + 2, x, z, air)
 
 		#build next light and update the blocksection
-		if block == block_section[len(block_section) - 1]:
+		if type(block) == type(block_section[len(block_section) - 1]) and block == block_section[len(block_section) - 1]:
 			isPut = generateLight(matrix, block_section, path, height_map)
 			if isPut == False: #Failed to find a good position with the center of mass, build it next to or on the path
 				try:

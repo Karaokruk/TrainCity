@@ -30,6 +30,7 @@ inputs = (
 						"Test",
 						)),
 	("allow Train Line", True),
+	("Train Line Style", ("Urban", "Country"),)
 )
 
 # change to INFO if you want a verbose log!
@@ -133,11 +134,19 @@ def perform(level, box, options):
 	for (score, partition) in final_partitioning:
 		logging.info("\t{}".format(partition))
 
-	for (score, partition) in final_partitioning:
-		#building = generateBuilding(world, partition, height_map, simple_height_map)
+	#for (score, partition) in final_partitioning:
+	#	#building = generateBuilding(world, partition, height_map, simple_height_map)
+	#	wood_material = TreeGestion.selectWoodFromTreeCounter(tree_counter)
+	#	logging.info("Wood material used : {}".format(wood_material))
+	#	building = generateStructureFromDeck(world, score, partition, height_map, simple_height_map, wood_material, settlementDeck, "center")
+	#	all_buildings.append(building)
+
+	l = len(final_partitioning)
+	for i in range(l):
 		wood_material = TreeGestion.selectWoodFromTreeCounter(tree_counter)
 		logging.info("Wood material used : {}".format(wood_material))
-		building = generateStructureFromDeck(world, score, partition, height_map, simple_height_map, wood_material, settlementDeck, "center")
+		score = i / (l * 1.0) # turns the result to float
+		building = generateStructureFromDeck(world, score, final_partitioning[i][1], height_map, simple_height_map, wood_material, settlementDeck, "center")
 		all_buildings.append(building)
 
 	# ==== GENERATING NEIGHBOURHOODS ====
@@ -204,10 +213,18 @@ def perform(level, box, options):
 
 	logging.info("Building in the neighbourhood")
 
-	for (score, partition) in final_partitioning:
+	#for (score, partition) in final_partitioning:
+	#	wood_material = TreeGestion.selectWoodFromTreeCounter(tree_counter)
+	#	logging.info("Wood material used : {}".format(wood_material))
+	#	building = generateStructureFromDeck(world, score, partition, height_map, simple_height_map, wood_material, settlementDeck, "neighbourhood")
+	#	all_buildings.append(building)
+
+	l = len(final_partitioning)
+	for i in range(l):
 		wood_material = TreeGestion.selectWoodFromTreeCounter(tree_counter)
 		logging.info("Wood material used : {}".format(wood_material))
-		building = generateStructureFromDeck(world, score, partition, height_map, simple_height_map, wood_material, settlementDeck, "neighbourhood")
+		score = i / (l * 1.0) # turns the result to float
+		building = generateStructureFromDeck(world, score, final_partitioning[i][1], height_map, simple_height_map, wood_material, settlementDeck, "neighbourhood")
 		all_buildings.append(building)
 
 	#n = 0
@@ -237,8 +254,8 @@ def perform(level, box, options):
 
 	# ==== GENERATE THE DENSHA NETWORK ====
 	if options["allow Train Line"] == True:
-		#wood_material = TreeGestion.selectWoodFromTreeCounter(tree_counter)
-		wood_material = "urban"
+		wood_material = "urban" if options["Train Line Style"] == "Urban" else TreeGestion.selectWoodFromTreeCounter(tree_counter)
+
 		stations = generateDensha(world, center, height_map, simple_height_map, wood_material, settlementDeck.getNbStations())
 		for station in stations:
 			all_buildings.append(station)
@@ -362,14 +379,14 @@ def generateDensha(matrix, center, height_map, simple_height_map, wood_material,
 
 def generateStructureFromDeck(world, score, partition, height_map, simple_height_map, wood_material, settlementDeck, deck_type = "neighbourhood"):
 	structure_type = settlementDeck.popDeck(deck_type)
-	spawn_rate = utilityFunctions.structure_scores[structure_type] / (score * 1.0) # turns the result to float
-	while spawn_rate < RNG.random():
-		print("Structure of type : {} has a score too low ({} out of {}).".format(structure_type, utilityFunctions.structure_scores[structure_type], score))
-		print("Picking a new card")
+	size = settlementDeck.getSize()[0] if deck_type == "center" else settlementDeck.getSize()[1]
+	while abs(utilityFunctions.structure_scores[structure_type] - score) > 0.3 and size > 0:
+		logging.info("Structure of type : {} has a score too high ({} > 0.3).".format(structure_type, abs(utilityFunctions.structure_scores[structure_type] - score)))
+		logging.info("Picking a new card")
 		settlementDeck.putBackToDeck(deck_type, structure_type)
 		structure_type = settlementDeck.popDeck(deck_type)
-		spawn_rate = utilityFunctions.structure_scores[structure_type] / (score * 1.0) # turns the result to float
-	print("Generating a {} with lot score = {}".format(structure_type, score))
+		size -= 1
+	logging.info("Generating a {} with lot score = {}".format(structure_type, score))
 	if   structure_type == "house" :			return generateHouse(world, partition, height_map, simple_height_map, wood_material)
 	elif structure_type == "building" :			return generateBuilding(world, partition, height_map, simple_height_map)
 	elif structure_type == "farm" :				return generateFarm(world, partition, height_map, simple_height_map, wood_material)
