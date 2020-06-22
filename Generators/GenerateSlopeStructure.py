@@ -1,7 +1,6 @@
 import RNG
 import logging
 import utilityFunctions as utilityFunctions
-from enum import Enum
 
 MINIMUM_ROLLER_COASTER_LENGTH = 20
 MAX_SAME_HEIGHT_RAIL_LENGTH = 5
@@ -152,26 +151,26 @@ def getRailOrientation(height_map, rail_map, x, z, x_max, z_max, end_value):
 
 def getOrientationFromBinaryIndex(binary_orientation_index):
     orientations = {
-        0: utilityFunctions.Orientation.HORIZONTAL.value,
-        1: utilityFunctions.Orientation.HORIZONTAL.value,
-        2: utilityFunctions.Orientation.VERTICAL.value,
-        3: utilityFunctions.Orientation.NORTH_EAST.value,
-        4: utilityFunctions.Orientation.HORIZONTAL.value,
-        5: utilityFunctions.Orientation.HORIZONTAL.value,
-        6: utilityFunctions.Orientation.SOUTH_EAST.value,
-        7: utilityFunctions.Orientation.HORIZONTAL.value, # should never happen
-        8: utilityFunctions.Orientation.VERTICAL.value,
-        9: utilityFunctions.Orientation.NORTH_WEST.value,
-        10: utilityFunctions.Orientation.VERTICAL.value,
-        11: utilityFunctions.Orientation.VERTICAL.value, # should never happen
-        12: utilityFunctions.Orientation.SOUTH_WEST.value,
-        13: utilityFunctions.Orientation.HORIZONTAL.value, # should never happen
-        14: utilityFunctions.Orientation.VERTICAL.value, # should never happen
-        15: utilityFunctions.Orientation.NORTH_EAST.value, # should never happen
-        16: utilityFunctions.Orientation.NORTH.value,
-        17: utilityFunctions.Orientation.EAST.value,
-        18: utilityFunctions.Orientation.SOUTH.value,
-        19: utilityFunctions.Orientation.WEST.value
+        0: utilityFunctions.Orientation.HORIZONTAL,
+        1: utilityFunctions.Orientation.HORIZONTAL,
+        2: utilityFunctions.Orientation.VERTICAL,
+        3: utilityFunctions.Orientation.NORTH_EAST,
+        4: utilityFunctions.Orientation.HORIZONTAL,
+        5: utilityFunctions.Orientation.HORIZONTAL,
+        6: utilityFunctions.Orientation.SOUTH_EAST,
+        7: utilityFunctions.Orientation.HORIZONTAL, # should never happen
+        8: utilityFunctions.Orientation.VERTICAL,
+        9: utilityFunctions.Orientation.NORTH_WEST,
+        10: utilityFunctions.Orientation.VERTICAL,
+        11: utilityFunctions.Orientation.VERTICAL, # should never happen
+        12: utilityFunctions.Orientation.SOUTH_WEST,
+        13: utilityFunctions.Orientation.HORIZONTAL, # should never happen
+        14: utilityFunctions.Orientation.VERTICAL, # should never happen
+        15: utilityFunctions.Orientation.NORTH_EAST, # should never happen
+        16: utilityFunctions.Orientation.NORTH,
+        17: utilityFunctions.Orientation.EAST,
+        18: utilityFunctions.Orientation.SOUTH,
+        19: utilityFunctions.Orientation.WEST
     }
 
     return orientations[binary_orientation_index] - 1

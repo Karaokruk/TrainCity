@@ -13,7 +13,6 @@ from copy import deepcopy
 import sys
 from operator import itemgetter
 from collections import Counter
-from enum import Enum
 
 
 air_like = [0, 6, 17, 18, 30, 31, 32, 37, 38, 39, 40, 59, 81, 83, 85, 104, 105, 106, 107, 111, 141, 142, 161, 162, 175, 78, 79, 99]
@@ -805,4 +804,15 @@ structure_scores = {
 }
 
 ## Rail orientation goes from 0 to 9 included (2, 3, 4, 5 -> slopes) (6, 7, 8, 9 -> turns)
-Orientation = Enum("Orientation", "VERTICAL HORIZONTAL NORTH SOUTH WEST EAST NORTH_EAST SOUTH_EAST SOUTH_WEST NORTH_WEST")
+#Orientation = Enum("Orientation", "VERTICAL HORIZONTAL NORTH SOUTH WEST EAST NORTH_EAST SOUTH_EAST SOUTH_WEST NORTH_WEST")
+class Orientation:
+	VERTICAL = 1
+	HORIZONTAL = 2
+	NORTH = 3
+	SOUTH = 4
+	WEST = 5
+	EAST = 6
+	NORTH_EAST = 7
+	SOUTH_EAST = 8
+	SOUTH_WEST = 9
+	NORTH_WEST = 10

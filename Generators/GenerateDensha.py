@@ -148,7 +148,7 @@ def generateStation(matrix, wooden_materials_kit, simple_height_map, densha_heig
 
 	if direction == 1:
 		# base
-		matrix.setValue(initial_position + 1, x, z, utilityFunctions.getBlockID("golden_rail", utilityFunctions.Orientation.HORIZONTAL.value - 1))
+		matrix.setValue(initial_position + 1, x, z, utilityFunctions.getBlockID("golden_rail", utilityFunctions.Orientation.HORIZONTAL - 1))
 		for y in range(simple_height_map[x][z - 1] + 1, initial_position + 1):
 			matrix.setValue(y, x, z - 1, utilityFunctions.getBlockID("ladder", 2))
 		for y in range(simple_height_map[x][z + 1] + 1, initial_position + 1):
@@ -164,7 +164,7 @@ def generateStation(matrix, wooden_materials_kit, simple_height_map, densha_heig
 
 	elif direction == 0:
 		# base
-		matrix.setValue(initial_position + 1, x, z, utilityFunctions.getBlockID("golden_rail", utilityFunctions.Orientation.VERTICAL.value - 1))
+		matrix.setValue(initial_position + 1, x, z, utilityFunctions.getBlockID("golden_rail", utilityFunctions.Orientation.VERTICAL - 1))
 		for y in range(simple_height_map[x][z - 1] + 1, initial_position + 1):
 			matrix.setValue(y, x - 1, z, utilityFunctions.getBlockID("ladder", 4))
 		for y in range(simple_height_map[x][z + 1] + 1, initial_position + 1):
@@ -300,10 +300,10 @@ def generatePillar(matrix, pillar_material, simple_height_map, densha_height_map
 		matrix.setValue(h + 2, x + 1, z, utilityFunctions.getBlockID("torch", 5))
 
 def isGoldenRail(rail_orientation):
-	return (rail_orientation == utilityFunctions.Orientation.NORTH.value - 1 or
-			rail_orientation == utilityFunctions.Orientation.SOUTH.value - 1 or
-			rail_orientation == utilityFunctions.Orientation.WEST.value - 1 or
-			rail_orientation == utilityFunctions.Orientation.EAST.value - 1)
+	return (rail_orientation == utilityFunctions.Orientation.NORTH - 1 or
+			rail_orientation == utilityFunctions.Orientation.SOUTH - 1 or
+			rail_orientation == utilityFunctions.Orientation.WEST - 1 or
+			rail_orientation == utilityFunctions.Orientation.EAST - 1)
 
 def generateRail(matrix, y, x, z, path_material, fence_material, rail_orientation, generateAround = True):
 	# Generate the path
@@ -312,13 +312,13 @@ def generateRail(matrix, y, x, z, path_material, fence_material, rail_orientatio
 	matrix.setValue(y, x, z, path_material)
 	if generateAround:
 		(x_modifier, z_modifier) = (1, 0) # default
-		if ((rail_orientation == utilityFunctions.Orientation.VERTICAL.value - 1) or
-			(rail_orientation == utilityFunctions.Orientation.WEST.value - 1) or
-			(rail_orientation == utilityFunctions.Orientation.EAST.value - 1)):
+		if ((rail_orientation == utilityFunctions.Orientation.VERTICAL - 1) or
+			(rail_orientation == utilityFunctions.Orientation.WEST - 1) or
+			(rail_orientation == utilityFunctions.Orientation.EAST - 1)):
 			(x_modifier, z_modifier) = (1, 0)
-		elif ((rail_orientation == utilityFunctions.Orientation.HORIZONTAL.value - 1) or
-			(rail_orientation == utilityFunctions.Orientation.NORTH.value - 1) or
-			(rail_orientation == utilityFunctions.Orientation.SOUTH.value - 1)):
+		elif ((rail_orientation == utilityFunctions.Orientation.HORIZONTAL - 1) or
+			(rail_orientation == utilityFunctions.Orientation.NORTH - 1) or
+			(rail_orientation == utilityFunctions.Orientation.SOUTH - 1)):
 			(x_modifier, z_modifier) = (0, 1)
 		matrix.setValue(y - 1, x - x_modifier, z - z_modifier, path_material)
 		matrix.setValue(y, x - x_modifier, z - z_modifier, path_material)
@@ -337,26 +337,26 @@ def generateRail(matrix, y, x, z, path_material, fence_material, rail_orientatio
 def generateRailWithDifferential(matrix, wooden_materials_kit, densha_height_map, x, z, rail_orientation):
 	path_material = wooden_materials_kit["planks"]
 	fence_material = wooden_materials_kit["fence"]
-	if (rail_orientation == utilityFunctions.Orientation.HORIZONTAL.value - 1):
-		if densha_height_map[x][z] == densha_height_map[x + 1][z] - 1: rail_orientation = utilityFunctions.Orientation.NORTH.value - 1
-		elif densha_height_map[x][z] == densha_height_map[x - 1][z] - 1: rail_orientation = utilityFunctions.Orientation.SOUTH.value - 1
-	elif (rail_orientation == utilityFunctions.Orientation.VERTICAL.value - 1):
-		if densha_height_map[x][z] == densha_height_map[x][z + 1] - 1: rail_orientation = utilityFunctions.Orientation.EAST.value - 1
-		elif densha_height_map[x][z] == densha_height_map[x][z - 1] - 1: rail_orientation = utilityFunctions.Orientation.WEST.value - 1
+	if (rail_orientation == utilityFunctions.Orientation.HORIZONTAL - 1):
+		if densha_height_map[x][z] == densha_height_map[x + 1][z] - 1: rail_orientation = utilityFunctions.Orientation.NORTH - 1
+		elif densha_height_map[x][z] == densha_height_map[x - 1][z] - 1: rail_orientation = utilityFunctions.Orientation.SOUTH - 1
+	elif (rail_orientation == utilityFunctions.Orientation.VERTICAL - 1):
+		if densha_height_map[x][z] == densha_height_map[x][z + 1] - 1: rail_orientation = utilityFunctions.Orientation.EAST - 1
+		elif densha_height_map[x][z] == densha_height_map[x][z - 1] - 1: rail_orientation = utilityFunctions.Orientation.WEST - 1
 	generateRail(matrix, densha_height_map[x][z] + HEIGHT_FROM_GROUND, x, z, path_material, fence_material, rail_orientation)
 
 ## Happen when the corner rail smoothed not enough
 def generateSpecialCorner(matrix, simple_height_map, densha_height_map, y, x, z, x_modifier, z_modifier, path_material, fence_material, pillar_material, rail_orientation):
 	print("Generating special rail corner")
-	rail_orientations = (utilityFunctions.Orientation.NORTH_WEST.value - 1, utilityFunctions.Orientation.SOUTH_EAST.value - 1, utilityFunctions.Orientation.HORIZONTAL.value - 1, utilityFunctions.Orientation.EAST.value - 1, utilityFunctions.Orientation.SOUTH.value - 1, utilityFunctions.Orientation.VERTICAL.value - 1) #default
-	if rail_orientation == utilityFunctions.Orientation.NORTH_EAST.value - 1:
-		rail_orientations = (utilityFunctions.Orientation.NORTH_WEST.value - 1, utilityFunctions.Orientation.SOUTH_EAST.value - 1, utilityFunctions.Orientation.HORIZONTAL.value - 1, utilityFunctions.Orientation.EAST.value - 1, utilityFunctions.Orientation.SOUTH.value - 1, utilityFunctions.Orientation.VERTICAL.value - 1)
-	elif rail_orientation == utilityFunctions.Orientation.NORTH_WEST.value - 1:
-		rail_orientations = (utilityFunctions.Orientation.SOUTH_WEST.value - 1, utilityFunctions.Orientation.NORTH_EAST.value - 1, utilityFunctions.Orientation.VERTICAL.value - 1, utilityFunctions.Orientation.NORTH.value - 1, utilityFunctions.Orientation.EAST.value - 1, utilityFunctions.Orientation.HORIZONTAL.value - 1)
-	elif rail_orientation == utilityFunctions.Orientation.SOUTH_EAST.value - 1:
-		rail_orientations = (utilityFunctions.Orientation.NORTH_EAST.value - 1, utilityFunctions.Orientation.SOUTH_WEST.value - 1, utilityFunctions.Orientation.HORIZONTAL.value - 1, utilityFunctions.Orientation.SOUTH.value - 1, utilityFunctions.Orientation.WEST.value - 1, utilityFunctions.Orientation.VERTICAL.value - 1)
-	elif rail_orientation == utilityFunctions.Orientation.SOUTH_WEST.value - 1:
-		rail_orientations = (utilityFunctions.Orientation.SOUTH_EAST.value - 1, utilityFunctions.Orientation.NORTH_WEST.value - 1, utilityFunctions.Orientation.VERTICAL.value - 1, utilityFunctions.Orientation.WEST.value - 1, utilityFunctions.Orientation.NORTH.value - 1, utilityFunctions.Orientation.HORIZONTAL.value - 1)
+	rail_orientations = (utilityFunctions.Orientation.NORTH_WEST - 1, utilityFunctions.Orientation.SOUTH_EAST - 1, utilityFunctions.Orientation.HORIZONTAL - 1, utilityFunctions.Orientation.EAST - 1, utilityFunctions.Orientation.SOUTH - 1, utilityFunctions.Orientation.VERTICAL - 1) #default
+	if rail_orientation == utilityFunctions.Orientation.NORTH_EAST - 1:
+		rail_orientations = (utilityFunctions.Orientation.NORTH_WEST - 1, utilityFunctions.Orientation.SOUTH_EAST - 1, utilityFunctions.Orientation.HORIZONTAL - 1, utilityFunctions.Orientation.EAST - 1, utilityFunctions.Orientation.SOUTH - 1, utilityFunctions.Orientation.VERTICAL - 1)
+	elif rail_orientation == utilityFunctions.Orientation.NORTH_WEST - 1:
+		rail_orientations = (utilityFunctions.Orientation.SOUTH_WEST - 1, utilityFunctions.Orientation.NORTH_EAST - 1, utilityFunctions.Orientation.VERTICAL - 1, utilityFunctions.Orientation.NORTH - 1, utilityFunctions.Orientation.EAST - 1, utilityFunctions.Orientation.HORIZONTAL - 1)
+	elif rail_orientation == utilityFunctions.Orientation.SOUTH_EAST - 1:
+		rail_orientations = (utilityFunctions.Orientation.NORTH_EAST - 1, utilityFunctions.Orientation.SOUTH_WEST - 1, utilityFunctions.Orientation.HORIZONTAL - 1, utilityFunctions.Orientation.SOUTH - 1, utilityFunctions.Orientation.WEST - 1, utilityFunctions.Orientation.VERTICAL - 1)
+	elif rail_orientation == utilityFunctions.Orientation.SOUTH_WEST - 1:
+		rail_orientations = (utilityFunctions.Orientation.SOUTH_EAST - 1, utilityFunctions.Orientation.NORTH_WEST - 1, utilityFunctions.Orientation.VERTICAL - 1, utilityFunctions.Orientation.WEST - 1, utilityFunctions.Orientation.NORTH - 1, utilityFunctions.Orientation.HORIZONTAL - 1)
 
 	generateRail(matrix, y + 1, x, z, path_material, fence_material, rail_orientations[1], False)
 	generateRail(matrix, y + 1, x, z + z_modifier, path_material, fence_material, rail_orientations[2], False)
@@ -404,13 +404,13 @@ def generateCorners(matrix, wooden_materials_kit, simple_height_map, densha_heig
 	pillar_material = wooden_materials_kit["log"]
 
 	# x_min, z_min
-	generateCorner(matrix, simple_height_map, densha_height_map, x_min, z_min, -1, -1, path_material, fence_material, pillar_material, utilityFunctions.Orientation.NORTH_EAST.value - 1)
+	generateCorner(matrix, simple_height_map, densha_height_map, x_min, z_min, -1, -1, path_material, fence_material, pillar_material, utilityFunctions.Orientation.NORTH_EAST - 1)
 	# x_min, z_max
-	generateCorner(matrix, simple_height_map, densha_height_map, x_min, z_max, -1, 1, path_material, fence_material, pillar_material, utilityFunctions.Orientation.NORTH_WEST.value - 1)
+	generateCorner(matrix, simple_height_map, densha_height_map, x_min, z_max, -1, 1, path_material, fence_material, pillar_material, utilityFunctions.Orientation.NORTH_WEST - 1)
 	# x_max, z_min
-	generateCorner(matrix, simple_height_map, densha_height_map, x_max, z_min, 1, -1, path_material, fence_material, pillar_material, utilityFunctions.Orientation.SOUTH_EAST.value - 1)
+	generateCorner(matrix, simple_height_map, densha_height_map, x_max, z_min, 1, -1, path_material, fence_material, pillar_material, utilityFunctions.Orientation.SOUTH_EAST - 1)
 	# x_max, z_max
-	generateCorner(matrix, simple_height_map, densha_height_map, x_max, z_max, 1, 1, path_material, fence_material, pillar_material, utilityFunctions.Orientation.SOUTH_WEST.value - 1)
+	generateCorner(matrix, simple_height_map, densha_height_map, x_max, z_max, 1, 1, path_material, fence_material, pillar_material, utilityFunctions.Orientation.SOUTH_WEST - 1)
 
 def generateRails(matrix, wooden_materials_kit, nb_stations, height_map, simple_height_map, densha_height_map, x_min, x_max, z_min, z_max):
 	pillar_coordinates = []
@@ -430,7 +430,7 @@ def generateRails(matrix, wooden_materials_kit, nb_stations, height_map, simple_
 
 	generateCorners(matrix, wooden_materials_kit, simple_height_map, densha_height_map, x_min, x_max, z_min, z_max)
 
-	rail_orientation = utilityFunctions.Orientation.HORIZONTAL.value - 1
+	rail_orientation = utilityFunctions.Orientation.HORIZONTAL - 1
 	for x in range(x_min + 1, x_max):
 		station_orientation = 1
 		flatness_score1 = flatness_score1 + 1 if isFlat(densha_height_map, x, z_min, 1) else 0
@@ -462,7 +462,7 @@ def generateRails(matrix, wooden_materials_kit, nb_stations, height_map, simple_
 	if nb_stations1 > 0 or nb_stations2 > 0:
 		nb_stations3 += 1
 		nb_stations4 += 1
-	rail_orientation = utilityFunctions.Orientation.VERTICAL.value - 1
+	rail_orientation = utilityFunctions.Orientation.VERTICAL - 1
 	for z in range(z_min + 1, z_max):
 		station_orientation = 0
 		flatness_score3 = flatness_score3 + 1 if isFlat(densha_height_map, x_min, z, 0) else 0
