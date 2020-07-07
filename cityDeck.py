@@ -6,7 +6,7 @@ M = [9, 32] # less than 9x9 chunks
 L = [16, 64] # less than 12x12 chunks
 XL = [36, 256] # more than 12x12 chunks
 
-class SettlementDeck:
+class CityDeck:
 
     nbBuildings = nbHouses = nbFarms = nbTowers = nbRollerCoasters = 0
     centerDeck = []

@@ -1,28 +1,30 @@
 import random
 import RNG
 import logging
-import utilityFunctions as utilityFunctions
+import toolbox as toolbox
+import utility as utility
 
 PLANT_SPECIES_NUMBER = 3
 
 def generateFarm(matrix, wood_material, h_min, h_max, x_min, x_max, z_min, z_max, farmType):
+	logger = logging.getLogger("farm")
 
-	farm = utilityFunctions.dotdict()
+	farm = toolbox.dotdict()
 	farm.type = "farm"
-	farm.lotArea = utilityFunctions.dotdict({"y_min": h_min, "y_max": h_max, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
+	farm.lotArea = toolbox.dotdict({"y_min": h_min, "y_max": h_max, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
 
-	utilityFunctions.cleanProperty(matrix, h_min + 1, h_max, x_min, x_max, z_min, z_max)
+	toolbox.cleanProperty(matrix, h_min + 1, h_max, x_min, x_max, z_min, z_max)
 
 	(h_min, h_max, x_min, x_max, z_min, z_max) = getFarmAreaInsideLot(h_min, h_max, x_min, x_max, z_min, z_max, farmType)
-	farm.buildArea = utilityFunctions.dotdict({"y_min": h_min, "y_max": h_max, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
+	farm.buildArea = toolbox.dotdict({"y_min": h_min, "y_max": h_max, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
 
-	logging.info("Generating farm at area {}".format(farm.lotArea))
-	logging.info("Construction area {}".format(farm.buildArea))
+	logger.info("Generating Farm at area {}".format(farm.lotArea))
+	logger.info("Construction area {}".format(farm.buildArea))
 
 	farm.orientation = getOrientation(matrix, farm.lotArea)
 
 	## Generates the farm
-	wooden_materials_kit = utilityFunctions.wood_IDs[wood_material]
+	wooden_materials_kit = utility.wood_IDs[wood_material]
 	if farmType == None:
 		generateBasicPattern(matrix, wooden_materials_kit, h_min, x_min, x_max, z_min, z_max)
 	elif farmType == "smiley":
@@ -80,7 +82,7 @@ def getFarmAreaInsideLot(h_min, h_max, x_min, x_max, z_min, z_max, farmType):
 	return (h_min, h_max, x_min, x_max, z_min, z_max)
 
 def generateEntrance(matrix, wooden_materials_kit, orientation, h_min, door_x, door_z, min_bound, max_bound):
-	grass_pathID = utilityFunctions.getBlockID("grass_path")
+	grass_pathID = toolbox.getBlockID("grass_path")
 	if orientation % 2 == 0:
 		for z in range(min_bound, max_bound):
 			matrix.setValue(h_min, door_x, z, grass_pathID)
@@ -101,17 +103,17 @@ def generateBasicPattern(matrix, wooden_materials_kit, h, x_min, x_max, z_min, z
 	## GROUND & CULTURES
 	if plant == None:
 		# select one random plant for this farm
-		plants = [utilityFunctions.getBlockID("wheat"), utilityFunctions.getBlockID("carrots"), utilityFunctions.getBlockID("potatoes")]
+		plants = [toolbox.getBlockID("wheat"), toolbox.getBlockID("carrots"), toolbox.getBlockID("potatoes")]
 		plant = plants[RNG.randint(0, PLANT_SPECIES_NUMBER - 1)]
 	# fill field with dirt and the corresponding plant
-	farmlandID = utilityFunctions.getBlockID("farmland")
+	farmlandID = toolbox.getBlockID("farmland")
 	for x in range(x_min + 3, x_max - 2):
 		for z in range(z_min + 3, z_max - 2):
 			matrix.setValue(h, x, z, farmlandID)
 			matrix.setValue(h + 1, x, z, plant)
 
 	## WATER
-	waterID = utilityFunctions.getBlockID("water")
+	waterID = toolbox.getBlockID("water")
 	for x in range(x_min + 2, x_max - 1):
 		matrix.setValue(h, x, z_max - 2, waterID)
 		matrix.setValue(h, x, z_min + 2, waterID)
@@ -125,8 +127,8 @@ def generateSmileyPattern(matrix, wooden_materials_kit, h, x_min, x_max, z_min, 
 	generateFences(matrix, wooden_materials_kit, h, x_min + 1, x_max - 1, z_min + 1, z_max - 1)
 
 	## GROUND
-	farmlandID = utilityFunctions.getBlockID("farmland")
-	carrotsID = utilityFunctions.getBlockID("carrots")
+	farmlandID = toolbox.getBlockID("farmland")
+	carrotsID = toolbox.getBlockID("carrots")
 	# fill field with dirt and carrots
 	for x in range(x_min + 3, x_max - 2):
 		for z in range(z_min + 3, z_max - 2):
@@ -134,15 +136,15 @@ def generateSmileyPattern(matrix, wooden_materials_kit, h, x_min, x_max, z_min, 
 			matrix.setValue(h + 1, x, z, CARROT_ID)
 
 	## SMILEY
-	wheatID = utilityFunctions.getBlockID("wheat")
-	waterID = utilityFunctions.getBlockID("water")
+	wheatID = toolbox.getBlockID("wheat")
+	waterID = toolbox.getBlockID("water")
 	# eyes
 	def generateEye(x, z):
 		matrix.setValue(h + 1, x, z, wheatID)
 		matrix.setValue(h + 1, x, z + 1, wheatID)
 		matrix.setValue(h + 1, x + 1, z, wheatID)
 		matrix.setValue(h, x + 1, z + 1, waterID)
-		matrix.setValue(h + 1, x + 1, z + 1, utilityFunctions.getBlockID("air"))
+		matrix.setValue(h + 1, x + 1, z + 1, toolbox.getBlockID("air"))
 	# left eye
 	generateEye(x_min + 5, z_min + 5)
 	# right eye
@@ -167,7 +169,7 @@ def generateSmileyPattern(matrix, wooden_materials_kit, h, x_min, x_max, z_min, 
 def generateFences(matrix, wooden_materials_kit, h, x_min, x_max, z_min, z_max):
 	oak_logID = wooden_materials_kit["log"]
 	oak_fenceID = wooden_materials_kit["fence"]
-	torchID = utilityFunctions.getBlockID("torch", 5)
+	torchID = toolbox.getBlockID("torch", 5)
 	for x in range(x_min, x_max + 1):
 		matrix.setValue(h, x, z_max, oak_logID)
 		matrix.setValue(h, x, z_min, oak_logID)

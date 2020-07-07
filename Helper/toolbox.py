@@ -7,12 +7,13 @@ from collections import defaultdict
 from AStar import aStar
 from AStar import simpleAStar
 from Matrix import Matrix
-from SettlementDeck import SettlementDeck
+from cityDeck import CityDeck
 import RNG
 from copy import deepcopy
 import sys
 from operator import itemgetter
 from collections import Counter
+import utility as utility
 
 
 air_like = [0, 6, 17, 18, 30, 31, 32, 37, 38, 39, 40, 59, 81, 83, 85, 104, 105, 106, 107, 111, 141, 142, 161, 162, 175, 78, 79, 99]
@@ -257,8 +258,8 @@ def generateMatrix(level, box, width, depth, height):
 	return matrix
 
 # generate and return a settlement in the form of a deck composed with a specific number of buildings
-def generateSettlementDeck(type, width, height):
-	return SettlementDeck(type, width, height)
+def generateCityDeck(type, width, height):
+	return CityDeck(type, width, height)
 
 # get a subsection of a give arean partition based on the percentage
 def getSubsection(y_min, y_max, x_min, x_max, z_min, z_max, percentage=0.8):
@@ -550,7 +551,7 @@ def getMST_Manhattan(buildings):
 	partitions = deepcopy(buildings)
 
 	selected_vertex = partitions[RNG.randint(0, len(partitions)-1)]
-	logging.info("Initial selected partition: {}".format(selected_vertex))
+	logging.error("Initial selected partition: {}".format(selected_vertex))
 	vertices.append(selected_vertex)
 	partitions.remove(selected_vertex)
 
@@ -558,9 +559,9 @@ def getMST_Manhattan(buildings):
 
 		edges = []
 		for v in vertices:
-			logging.info("v: {}".format(v))
+			logging.error("v: {}".format(v))
 			for p in partitions:
-				logging.info("\tp: {}".format(p))
+				logging.error("\tp: {}".format(p))
 				p1 = v.entranceLot
 				p2 = p.entranceLot
 				distance = getManhattanDistance((p1[0],p1[1]), (p2[0],p2[1]))
@@ -675,97 +676,18 @@ def mostOccured(l):
     occurence_count = Counter(l)
     return occurence_count.most_common(1)[0][0]
 
-
-IDs = {
-	"air" : 0,
-	"stone" : 1,
-	"grass" : 2,
-	"dirt" : 3,
-	"cobblestone" : 4,
-	"planks" : 5,
-	"flowing_water" : 8,
-	"water" : 9,
-	"flowing_lava" : 10,
-	"lava" : 11,
-	"log" : 17,
-	"leaves" : 18,
-	"glass" : 20,
-	"bed" : 26,
-	"golden_rail" : 27,
-	"detector_rail" : 28,
-	"web" : 30,
-	"tallgrass" : 31,
-	"deadbush" : 32,
-	"wool" : 35,
-	"yellow_flower" : 37,
-	"flower" : 38,
-	"brown_mushroom" : 39,
-	"red_mushroom" : 40,
-	"double_stone_slab" : 43,
-	"stone_slab" : 44,
-	"brick_block" : 45,
-	"bookshelf" : 47,
-	"torch" : 50,
-	"oak_stairs" : 53,
-	"chest" : 54,
-	"crafting_table" : 58,
-	"wheat" : 59,
-	"farmland" : 60,
-	"furnace" : 61,
-	"wooden_door" : 64,
-	"ladder" : 65,
-	"rail" : 66,
-	"stone_stairs" : 67,
-	"redstone_torch" : 76,
-	"snow" : 78,
-	"ice" : 79,
-	"cactus" : 81,
-	"reeds" : 83,
-	"oak_fence" : 85,
-	"melon_block" : 103,
-	"pumpkin_stem" : 104,
-	"melon_stem" : 105,
-	"vine" : 106,
-	"oak_fence_gate" : 107,
-	"brick_stairs" : 108,
-	"stone_brick_stairs" : 109,
-	"waterlily" : 111,
-	"redstone_lamp" : 123,
-	"wooden_slab" : 126,
-	"spruce_stairs" : 134,
-	"birch_stairs" : 135,
-	"jungle_stairs" : 136,
-	"cobblestone_wall" : 139,
-	"carrots" : 141,
-	"potatoes" : 142,
-	"redstone_block" : 152,
-	"leaves2" : 161,
-	"log2" : 162,
-	"acacia_stairs" : 163,
-	"dark_oak_stairs" : 164,
-	"double_plant" : 175,
-	"daylight_detector_inverted" : 178,
-	"spruce_fence_gate" : 183,
-	"birch_fence_gate" : 184,
-	"jungle_fence_gate" : 185,
-	"dark_oak_fence_gate" : 186,
-	"acacia_fence_gate" : 187,
-	"spruce_fence" : 188,
-	"birch_fence" : 189,
-	"jungle_fence" : 190,
-	"dark_oak_fence" : 191,
-	"acacia_fence" : 192,
-	"spruce_door" : 193,
-	"birch_door" : 194,
-	"jungle_door" : 195,
-	"acacia_door" : 196,
-	"dark_oak_door" : 197,
-	"grass_path" : 208,
-	"iron_door" : 330
+## Score for each structure type to help generating it on an appropriate terrain
+structure_scores = {
+	"house" : 0.4,
+	"farm" : 0.2,
+	"building" : 0.5,
+	"slope structure" : 1
 }
+def getStructureScore(name):
+	return structure_scores[name]
 
 def getBlockID(name, secondaryID = 0):
-	return (IDs[name], secondaryID)
+	return utility.getBlockID(name, secondaryID)
 
 ## Set of blocks for each wood type :
 # 0 -> planks
@@ -796,12 +718,6 @@ wood_IDs = {
 	"urban" :		createWoodenMaterialsKit(getBlockID("double_stone_slab", 5), getBlockID("double_stone_slab", 5), getBlockID("stone_slab", 5), getBlockID("stone_brick_stairs", 0), getBlockID("iron_door", 0), getBlockID("cobblestone_wall", 0), getBlockID("dark_oak_fence_gate", 0))
 }
 
-structure_scores = {
-	"house" : 0.4,
-	"farm" : 0.2,
-	"building" : 0.5,
-	"slope structure" : 1
-}
 
 ## Rail orientation goes from 0 to 9 included (2, 3, 4, 5 -> slopes) (6, 7, 8, 9 -> turns)
 #Orientation = Enum("Orientation", "VERTICAL HORIZONTAL NORTH SOUTH WEST EAST NORTH_EAST SOUTH_EAST SOUTH_WEST NORTH_WEST")

@@ -1,25 +1,25 @@
-import utilityFunctions
+import toolbox
 import logging
 
 # Perform earthworks on a given lot, returns the height to start construction
 def prepareLot(matrix, p, height_map, block):
 
-	areaScore = utilityFunctions.getScoreArea_type4(height_map, p[2],p[3], p[4], p[5])
+	areaScore = toolbox.getScoreArea_type4(height_map, p[2],p[3], p[4], p[5])
 	logging.info("Preparing lot {} with score {}".format(p, areaScore))
 
 	if areaScore != 0:
 		terrain_height = flattenPartition(matrix, p[2],p[3], p[4], p[5], height_map, block)
 		logging.info("Terrain was flattened at height {}".format(terrain_height))
-		utilityFunctions.updateHeightMap(height_map, p[2], p[3], p[4], p[5], terrain_height)
+		toolbox.updateHeightMap(height_map, p[2], p[3], p[4], p[5], terrain_height)
 		h = matrix.getMatrixY(terrain_height)
 	else:
-		heightCounts = utilityFunctions.getHeightCounts(height_map, p[2],p[3], p[4], p[5])
+		heightCounts = toolbox.getHeightCounts(height_map, p[2],p[3], p[4], p[5])
 		terrain_height = max(heightCounts, key=heightCounts.get)
 		logging.info("No changes in terrain were necessary, terrain at height {}".format(terrain_height))
-		utilityFunctions.updateHeightMap(height_map, p[2], p[3], p[4], p[5], terrain_height)
+		toolbox.updateHeightMap(height_map, p[2], p[3], p[4], p[5], terrain_height)
 		# update the ground with the most occured block
 		if block == None:
-			block = utilityFunctions.getMostOcurredGroundBlock(matrix, height_map, p[2],p[3], p[4], p[5])
+			block = toolbox.getMostOcurredGroundBlock(matrix, height_map, p[2],p[3], p[4], p[5])
 			if block == (3, 0):
 				block = (2, 0)
 		for x in range(p[2], p[3]+1):
@@ -37,14 +37,14 @@ def prepareLot(matrix, p, height_map, block):
 # returns the height in which construction should start
 def flattenPartition(matrix, x_min, x_max, z_min, z_max, height_map, deep_block):
 
-	heightCounts = utilityFunctions.getHeightCounts(height_map, x_min, x_max, z_min, z_max)
+	heightCounts = toolbox.getHeightCounts(height_map, x_min, x_max, z_min, z_max)
 	most_ocurred_height = max(heightCounts, key=heightCounts.get)
 
 	logging.info("Flattening {}".format((x_min, x_max, z_min, z_max)))
 
 	top_block = deep_block
 	if deep_block == None:
-		top_block = deep_block = utilityFunctions.getMostOcurredGroundBlock(matrix, height_map, x_min, x_max, z_min, z_max)
+		top_block = deep_block = toolbox.getMostOcurredGroundBlock(matrix, height_map, x_min, x_max, z_min, z_max)
 	if deep_block == (3, 0):
 		top_block = (2, 0)
 	elif deep_block == (2, 0):

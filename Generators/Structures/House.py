@@ -3,38 +3,40 @@ import math
 import RNG
 import logging
 from pymclevel import alphaMaterials, BoundingBox
-import utilityFunctions as utilityFunctions
-from GenerateCarpet import generateCarpet
-from GenerateObject import *
+import toolbox as toolbox
+import utility as utility
+from Carpet import generateCarpet
+from Object import *
 
 def generateHouse(matrix, wood_material, h_min, h_max, x_min, x_max, z_min, z_max, ceiling = None):
-
-	house = utilityFunctions.dotdict()
+	logger = logging.getLogger("house")
+	
+	house = toolbox.dotdict()
 	house.type = "house"
-	house.lotArea = utilityFunctions.dotdict({"y_min": h_min, "y_max": h_max, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
+	house.lotArea = toolbox.dotdict({"y_min": h_min, "y_max": h_max, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
 
-	utilityFunctions.cleanProperty(matrix, h_min + 1, h_max, x_min, x_max, z_min, z_max)
+	toolbox.cleanProperty(matrix, h_min + 1, h_max, x_min, x_max, z_min, z_max)
 
 	(h_min, h_max, x_min, x_max, z_min, z_max) = getHouseAreaInsideLot(h_min, h_max, x_min, x_max, z_min, z_max)
 	# calculate the top height of the walls, i.e. where the first
 	# row of blocks of the pitched roof will be placed
 	ceiling_bottom = h_max -int((h_max-h_min) * 0.5)
-	house.buildArea = utilityFunctions.dotdict({"y_min": h_min, "y_max": ceiling_bottom, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
+	house.buildArea = toolbox.dotdict({"y_min": h_min, "y_max": ceiling_bottom, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
 
-	logging.info("Generating house at area {}".format(house.lotArea))
-	logging.info("Construction area {}".format(house.buildArea))
+	logger.info("Generating House at area {}".format(house.lotArea))
+	logger.info("Construction area {}".format(house.buildArea))
 
 	## Generates the house
-	wooden_materials_kit = utilityFunctions.wood_IDs[wood_material]
+	wooden_materials_kit = utility.wood_IDs[wood_material]
 
-	wall = utilityFunctions.getBlockID("double_stone_slab", RNG.randint(11, 15))
+	wall = toolbox.getBlockID("double_stone_slab", RNG.randint(11, 15))
 	floor = wall
 	ceiling = wooden_materials_kit["planks"] if ceiling == None else ceiling
 	door_ID = wooden_materials_kit["door"][0]
-	window = utilityFunctions.getBlockID("glass")
+	window = toolbox.getBlockID("glass")
 	fence = wooden_materials_kit["fence"]
 	fence_gate_ID = wooden_materials_kit["fence_gate"][0]
-	path = utilityFunctions.getBlockID("stone", 6)
+	path = toolbox.getBlockID("stone", 6)
 
 	# generate walls from x_min+1, x_max-1, etc to leave space for the roof
 	generateWalls(matrix, house.buildArea.y_min, house.buildArea.y_max, house.buildArea.x_min, house.buildArea.x_max, house.buildArea.z_min, house.buildArea.z_max, wall)
@@ -103,7 +105,7 @@ def generateHouse(matrix, wood_material, h_min, h_max, x_min, x_max, z_min, z_ma
 		generateCeiling_z(matrix, ceiling_bottom, h_max, x_min - 1, x_max + 1, z_min - 1, z_max + 1, ceiling, wall, 0)
 
 	generateInterior(matrix, h_min, ceiling_bottom, house.buildArea.x_min, house.buildArea.x_max, house.buildArea.z_min, house.buildArea.z_max, ceiling)
-	generateGarden(matrix, house, fence, fence_gate_ID)
+	generateGarden(logger, matrix, house, fence, fence_gate_ID)
 
 	return house
 
@@ -251,7 +253,7 @@ def getOrientation(matrix, area):
 			return RNG.choice(["N", "W"])
 	return None
 
-def generateGarden(matrix, house, fence, fence_gate_ID):
+def generateGarden(logger, matrix, house, fence, fence_gate_ID):
 
 	def findGardenOrientation(house): #finding where to build the garden depending on where there is the most space left on the house lot
 		n_space = (abs(house.lotArea.z_min - house.buildArea.z_min), "N")
@@ -394,7 +396,7 @@ def generateGarden(matrix, house, fence, fence_gate_ID):
 	list_space = findGardenOrientation(house)
 	if list_space[0][0] > 2 and list_space[1][0] > 2: #no garden if not enough space
 		findGardenPoints(house)
-		logging.info("Building garden between points {}, {}, {}, {}, {}".format(house.gardenPoint1, house.gardenPoint2, house.gardenPoint3, house.gardenPoint4, house.gardenPoint5))
+		logger.info("Generating House garden between points {}, {}, {}, {}, {}".format(house.gardenPoint1, house.gardenPoint2, house.gardenPoint3, house.gardenPoint4, house.gardenPoint5))
 		matrix.setValue(h, house.gardenPoint1[0], house.gardenPoint1[1], fence)
 		generateFences(matrix, house, house.gardenPoint1, house.gardenPoint2, h)
 		generateFences(matrix, house, house.gardenPoint2, house.gardenPoint3, h)
@@ -403,4 +405,4 @@ def generateGarden(matrix, house, fence, fence_gate_ID):
 		generateFenceGate(matrix, house, h)
 
 	else:
-		logging.info("Not enough space to build garden")
+		logger.warning("Not enough space to build House garden")

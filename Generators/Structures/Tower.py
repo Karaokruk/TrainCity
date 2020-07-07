@@ -3,22 +3,23 @@ import math
 import RNG
 import logging
 from pymclevel import alphaMaterials, BoundingBox
-import utilityFunctions as utilityFunctions
-from GenerateCarpet import generateCarpet
-from GenerateObject import *
+import toolbox as toolbox
+from Carpet import generateCarpet
+from Object import *
 
 def generateTower(matrix, x_min, x_max, z_min, z_max, height_map):
+	logger = logging.getLogger("tower")
 
-	tower = utilityFunctions.dotdict()
+	tower = toolbox.dotdict()
 	tower.type = "tower"
 
 	(h_tower, min_h, max_h, x_min, x_max, z_min, z_max) = getTowerAreaInsideLot(x_min, x_max, z_min, z_max, height_map)
 
-	tower.buildArea = utilityFunctions.dotdict({"y_min": min_h, "y_max": h_tower, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
+	tower.buildArea = toolbox.dotdict({"y_min": min_h, "y_max": h_tower, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
 	(door_pos, door_y, tower.orientation) = getOrientationT(matrix, tower.buildArea, height_map)
 	cleanTowerArea(matrix, door_y-1, h_tower+3, x_min, x_max, z_min, z_max)
 
-	logging.info("Generating tower at area {}".format(tower.buildArea))
+	logger.info("Generating Tower at area {}".format(tower.buildArea))
 
 	wall = (45,0)
 	floor = wall
@@ -70,7 +71,7 @@ def getTowerAreaInsideLot(x_min, x_max, z_min, z_max, height_map):
 	bz_min = z_min+1
 	bz_max = bz_min+tower_size-1
 	#get base score for this area
-	score_buildArea = utilityFunctions.getScoreArea_type1(height_map, bx_min, bx_max, bz_min, bz_max)
+	score_buildArea = toolbox.getScoreArea_type1(height_map, bx_min, bx_max, bz_min, bz_max)
 
 	#check every other possible area in the parcel to find if there is an area with a worse flatness score
 	for x in range(x_min+2, x_max-tower_size):
@@ -79,7 +80,7 @@ def getTowerAreaInsideLot(x_min, x_max, z_min, z_max, height_map):
 			nx_max = x + tower_size-1
 			nz_min = z
 			nz_max = z + tower_size-1
-			new_score_buildArea = utilityFunctions.getScoreArea_type1(height_map, nx_min, nx_max, nz_min, nz_max)
+			new_score_buildArea = toolbox.getScoreArea_type1(height_map, nx_min, nx_max, nz_min, nz_max)
 			if new_score_buildArea > score_buildArea:
 				bx_min = nx_min
 				bx_max = nx_max
@@ -392,7 +393,7 @@ def buildPlatform(matrix, h, x_actual, z_actual):
 	light = False
 	for neighbor_position in [(0, -1), (0, 1), (-1, 0), (1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1), (0, 0)]:
 		new_position = (x_actual + neighbor_position[0], z_actual + neighbor_position[1])
-		if utilityFunctions.getBlockFullValue(matrix, h, new_position[0], new_position[1]) == (0,0):
+		if toolbox.getBlockFullValue(matrix, h, new_position[0], new_position[1]) == (0,0):
 			matrix.setValue(h, new_position[0], new_position[1], (44,10))
 			if craftingTable == False:
 				matrix.setValue(h+1, new_position[0], new_position[1], (58,0))
@@ -409,7 +410,7 @@ def putLightT(matrix, h, x, z):
 	h -= 1
 	for neighbor_position in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
 		new_position = (x + neighbor_position[0], z + neighbor_position[1])
-		if utilityFunctions.getBlockFullValue(matrix, h, new_position[0], new_position[1]) == (45,0):
+		if toolbox.getBlockFullValue(matrix, h, new_position[0], new_position[1]) == (45,0):
 			if x < new_position[0]:
 				matrix.setValue(h, x, z, (50,2))
 				return True

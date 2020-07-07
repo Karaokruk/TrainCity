@@ -1,6 +1,7 @@
 import RNG
 import logging
-import utilityFunctions as utilityFunctions
+import toolbox as toolbox
+import utility as utility
 
 MINIMUM_ROLLER_COASTER_LENGTH = 20
 MAX_SAME_HEIGHT_RAIL_LENGTH = 5
@@ -12,73 +13,73 @@ max_rail_length = 0
 ## - being able to put multiple rails on the same (x, z) (for example when the rails are going down a mine)
 ## -
 
-def generateSlopeStructure(matrix, wood_material, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails = False):
-    logging.info("Trying to generate roller coaster")
+def generateRollerCoaster(matrix, wood_material, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails = False):
+    logger = logging.getLogger("rollerCoaster")
+    logger.info("Preparation for Roller Coaster generation")
 
     cleanProperty(matrix, height_map, h_max, x_min, x_max, z_min, z_max)
-    #spawnFlowers(matrix, height_map, x_min, x_max, z_min, z_max)
 
     ## Generates the roller coaster
-    wooden_materials_kit = utilityFunctions.wood_IDs[wood_material]
-    return_value = generateRollerCoaster(matrix, wooden_materials_kit, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails)
+    wooden_materials_kit = utility.wood_IDs[wood_material]
+    return_value = generateStructure(logger, matrix, wooden_materials_kit, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails)
     if return_value == 0:
         return 0
-    slope = utilityFunctions.dotdict()
-    slope.type = "rollerCoaster"
-    slope.lotArea = utilityFunctions.dotdict({"y_min": 0, "y_max": h_max, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
-    slope.buildArea = utilityFunctions.dotdict({"y_min": 0, "y_max": h_max, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
-    slope.orientation = getOrientation()
-    slope.entranceLot = (height_map[x_min][z_min], slope.lotArea.x_min, slope.lotArea.z_min)
-    return slope
+    rc = toolbox.dotdict()
+    rc.type = "rollerCoaster"
+    rc.lotArea = toolbox.dotdict({"y_min": 0, "y_max": h_max, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
+    rc.buildArea = toolbox.dotdict({"y_min": 0, "y_max": h_max, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
+    rc.orientation = getOrientation()
+    rc.entranceLot = (height_map[x_min][z_min], rc.lotArea.x_min, rc.lotArea.z_min)
+    return rc
 
-def spawnFlowers(matrix, height_map, x_min, x_max, z_min, z_max):
-    for x in range(x_min, x_max):
-        for z in range(z_min, z_max):
-            matrix.setValue(height_map[x][z], x, z, utilityFunctions.getBlockID("grass"))
-            matrix.setValue(height_map[x][z] + 1, x, z, (utilityFunctions.getBlockID("flower"), RNG.randint(0, 9)))
-
-def generateRollerCoaster(matrix, wooden_materials_kit, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails, allowUpdateHeightMap=True):
+def generateStructure(logger, matrix, wooden_materials_kit, height_map, h_max, x_min, x_max, z_min, z_max, allowStraightRails, allowUpdateHeightMap=True):
     global max_rail_length
 
     ## set rail_map to 0's
     rail_map = [[-1 for z in range(z_max + 1)] for x in range(x_max + 1)]
 
+    logger.info("Calculating lot highest points")
     HPMap = highestPointsMap(height_map, x_min, x_max, z_min, z_max)
     highestPoint = HPMap[0]
 
     previous_max_rail_length = 0
     for HP in HPMap:
-        logging.info("Attempt to generate roller coaster with highest point : {}".format(HP))
+        logger.info("Attempt to generate Roller Coaster with highest point : {}".format(HP))
         rollRollerRoll(matrix, height_map, rail_map, 0, 0, MAX_SAME_HEIGHT_RAIL_LENGTH, x_min + 1, x_max - 1, z_min + 1, z_max - 1, HP[0], HP[1], 0)
         if previous_max_rail_length < max_rail_length:
             previous_max_rail_length = max_rail_length
             highestPoint = HP
 
-    #logging.info("Final highest point : {}".format(highestPoint))
+    logger.info("Calculated ideal highest point to generate Roller Coaster : {}".format(highestPoint))
 
     ## cancel the run if the roller coaster is not long enough
     if max_rail_length < MINIMUM_ROLLER_COASTER_LENGTH:
-        logging.info("Roller coaster is too short with length : {}, cancelling generation".format(max_rail_length))
+        logger.info("Roller coaster is too short with length : {}, cancelling generation".format(max_rail_length))
         return 0
 
     ## first run
+    logger.info("Cleaning Roller Coaster rail map")
     rail_map = cleanRailMap(rail_map, x_max, z_max)
+    logger.info("Generating first Roller Coaster path")
     railIndex = rollRollerRoll(matrix, height_map, rail_map, 0, 0, MAX_SAME_HEIGHT_RAIL_LENGTH, x_min + 1, x_max - 1, z_min + 1, z_max - 1, highestPoint[0], highestPoint[1], 1)
 
     ## second run
     for length in range(MAX_SAME_HEIGHT_RAIL_LENGTH, MAX_SAME_HEIGHT_RAIL_LENGTH + MAX_INCREASING_LENGTH_TRIES):
-        logging.info("Try to connect rails with max same level length : {}".format(length))
+        logger.info("Trying to connect Roller Coaster rail path with max same height level length : {}".format(length))
         rail_map = cleanRailMap(rail_map, x_max, z_max, railIndex)
         return_value = rollRollerRoll(matrix, height_map, rail_map, 0, 0, length, x_min, x_max, z_min, z_max, highestPoint[0], highestPoint[1], 2, railIndex)
         if return_value != 0:
+            logger.info("Managed to connect Roller Coaster rail path with max same height level length : {}".format(length))
             break
     if not allowStraightRails and return_value == 0: # did not find a connecting path
+        logger.info("Roller Coaster rails connection failed")
         return 0
 
     ## reinitialize the starting point in the rail map
     rail_map[highestPoint[0]][highestPoint[1]] = railIndex - 1
 
     ## generate the rails
+    logger.info("Generating Roller Coaster rails")
     generateRails(matrix, wooden_materials_kit, height_map, rail_map, x_min, x_max, z_min, z_max, highestPoint)
     generateChest(matrix, wooden_materials_kit, height_map, rail_map, highestPoint[0], highestPoint[1], x_min, x_max, z_min, z_max)
 
@@ -87,6 +88,7 @@ def generateRollerCoaster(matrix, wooden_materials_kit, height_map, h_max, x_min
 
     # set rail blocks in height_map to -1
     if allowUpdateHeightMap:
+        logger.info("Updating height map")
         updateHeightMap(height_map, rail_map, x_max, z_max)
     return 1
 
@@ -107,7 +109,7 @@ def generateRails(matrix, wooden_materials_kit, height_map, rail_map, x_min, x_m
     for x in range(x_min, x_max + 1):
         for z in range(z_min, z_max + 1):
             if rail_map[x][z] >= 2:
-                #print("x:{} z:{} is {} with max rail length {}".format(x, z, rail_map[x][z], max_rail_length))
+                #logging.info("x:{} z:{} is {} with max rail length {}".format(x, z, rail_map[x][z], max_rail_length))
                 ## check rail orientation using neighbouring rails
                 binary_orientation_index = getRailOrientation(height_map, rail_map, x, z, x_max, z_max, max_rail_length)
 
@@ -120,11 +122,11 @@ def generateRails(matrix, wooden_materials_kit, height_map, rail_map, x_min, x_m
 
                 ## regular rail
                 if binary_orientation_index < 16:
-                    matrix.setValue(height_map[x][z] + 1, x, z, utilityFunctions.getBlockID("rail", rail_orientation))
+                    matrix.setValue(height_map[x][z] + 1, x, z, toolbox.getBlockID("rail", rail_orientation))
                 ## powered rail
                 else:
-                    matrix.setValue(height_map[x][z] + 1, x, z, utilityFunctions.getBlockID("golden_rail", rail_orientation))
-                    matrix.setEntity(height_map[x][z] - 1, x, z, utilityFunctions.getBlockID("redstone_torch"), "redstone_torch")
+                    matrix.setValue(height_map[x][z] + 1, x, z, toolbox.getBlockID("golden_rail", rail_orientation))
+                    matrix.setEntity(height_map[x][z] - 1, x, z, toolbox.getBlockID("redstone_torch"), "redstone_torch")
 
 
 def isOneOrLessDifferencial(n1, n2, end_value):
@@ -133,7 +135,6 @@ def isOneOrLessDifferencial(n1, n2, end_value):
     if ((n1 == n2 + 1 or n1 == n2 - 1)
             or (n1 == 2 and n2 == end_value)
             or (n2 == 2 and n1 == end_value)):
-        #print("n1 {} n2 {}".format(n1, n2))
         return True
     return False
 
@@ -151,26 +152,26 @@ def getRailOrientation(height_map, rail_map, x, z, x_max, z_max, end_value):
 
 def getOrientationFromBinaryIndex(binary_orientation_index):
     orientations = {
-        0: utilityFunctions.Orientation.HORIZONTAL,
-        1: utilityFunctions.Orientation.HORIZONTAL,
-        2: utilityFunctions.Orientation.VERTICAL,
-        3: utilityFunctions.Orientation.NORTH_EAST,
-        4: utilityFunctions.Orientation.HORIZONTAL,
-        5: utilityFunctions.Orientation.HORIZONTAL,
-        6: utilityFunctions.Orientation.SOUTH_EAST,
-        7: utilityFunctions.Orientation.HORIZONTAL, # should never happen
-        8: utilityFunctions.Orientation.VERTICAL,
-        9: utilityFunctions.Orientation.NORTH_WEST,
-        10: utilityFunctions.Orientation.VERTICAL,
-        11: utilityFunctions.Orientation.VERTICAL, # should never happen
-        12: utilityFunctions.Orientation.SOUTH_WEST,
-        13: utilityFunctions.Orientation.HORIZONTAL, # should never happen
-        14: utilityFunctions.Orientation.VERTICAL, # should never happen
-        15: utilityFunctions.Orientation.NORTH_EAST, # should never happen
-        16: utilityFunctions.Orientation.NORTH,
-        17: utilityFunctions.Orientation.EAST,
-        18: utilityFunctions.Orientation.SOUTH,
-        19: utilityFunctions.Orientation.WEST
+        0: toolbox.Orientation.HORIZONTAL,
+        1: toolbox.Orientation.HORIZONTAL,
+        2: toolbox.Orientation.VERTICAL,
+        3: toolbox.Orientation.NORTH_EAST,
+        4: toolbox.Orientation.HORIZONTAL,
+        5: toolbox.Orientation.HORIZONTAL,
+        6: toolbox.Orientation.SOUTH_EAST,
+        7: toolbox.Orientation.HORIZONTAL, # should never happen
+        8: toolbox.Orientation.VERTICAL,
+        9: toolbox.Orientation.NORTH_WEST,
+        10: toolbox.Orientation.VERTICAL,
+        11: toolbox.Orientation.VERTICAL, # should never happen
+        12: toolbox.Orientation.SOUTH_WEST,
+        13: toolbox.Orientation.HORIZONTAL, # should never happen
+        14: toolbox.Orientation.VERTICAL, # should never happen
+        15: toolbox.Orientation.NORTH_EAST, # should never happen
+        16: toolbox.Orientation.NORTH,
+        17: toolbox.Orientation.EAST,
+        18: toolbox.Orientation.SOUTH,
+        19: toolbox.Orientation.WEST
     }
 
     return orientations[binary_orientation_index] - 1
@@ -179,7 +180,7 @@ def spawnChest(matrix, wooden_materials_kit, h, x, z, socle = "False"):
     ## generate oak log under chest
     if socle == True: matrix.setValue(h - 1, x, z, wooden_materials_kit["log"])
     ## generate the chest
-    matrix.setEntity(h, x, z, utilityFunctions.getBlockID("chest", 2), "chest")
+    matrix.setEntity(h, x, z, toolbox.getBlockID("chest", 2), "chest")
 
 def generateChest(matrix, wooden_materials_kit, height_map, rail_map, x, z, x_min, x_max, z_min, z_max):
     ## check every neighbouring block
@@ -280,10 +281,10 @@ def cleanProperty(matrix, height_map, h_max, x_min, x_max, z_min, z_max):
     for x in range(x_min, x_max):
         for z in range(z_min, z_max):
             for y in range(height_map[x][z] + 1, h_max):
-                matrix.setValue(y, x, z, utilityFunctions.getBlockID("air"))
+                matrix.setValue(y, x, z, toolbox.getBlockID("air"))
 
 def highestPointsMap(height_map, x_min, x_max, z_min, z_max):
-    highestPoint = utilityFunctions.getHighestPoint(height_map, x_min, x_max, z_min, z_max)
+    highestPoint = toolbox.getHighestPoint(height_map, x_min, x_max, z_min, z_max)
     h_max = height_map[highestPoint[0]][highestPoint[1]]
 
     map = []

@@ -3,24 +3,24 @@ import math
 import RNG
 import logging
 from pymclevel import alphaMaterials, BoundingBox
-import utilityFunctions as utilityFunctions
-from GenerateObject import *
-from GenerateCarpet import generateCarpet
+import toolbox as toolbox
+from Object import *
+from Carpet import generateCarpet
 
 def generateBuilding(matrix, h_min, h_max, x_min, x_max, z_min, z_max):
+	logger = logging.getLogger("building")
 
-	building = utilityFunctions.dotdict()
+	building = toolbox.dotdict()
 	building.type = "building"
+	building.lotArea = toolbox.dotdict({"y_min": h_min, "y_max": h_max, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
 
-	building.lotArea = utilityFunctions.dotdict({"y_min": h_min, "y_max": h_max, "x_min": x_min, "x_max": x_max, "z_min": z_min, "z_max": z_max})
-
-	utilityFunctions.cleanProperty(matrix, h_min+1, h_max, x_min, x_max, z_min, z_max)
+	toolbox.cleanProperty(matrix, h_min+1, h_max, x_min, x_max, z_min, z_max)
 
 	(h_min, h_max, x_min, x_max, z_min, z_max) = getBuildingAreaInsideLot(h_min, h_max, x_min, x_max, z_min, z_max)
 	building.buildArea = (h_min, h_max, x_min, x_max, z_min, z_max)
 
-	logging.info("Generating building at area {}".format(building.lotArea))
-	logging.info("Construction area {}".format(building.buildArea))
+	logger.info("Generating Building at area {}".format(building.lotArea))
+	logger.info("Construction area {}".format(building.buildArea))
 
 	wall = (159, random.randint(0,15))
 	ceiling = wall

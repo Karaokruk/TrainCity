@@ -1,5 +1,5 @@
 import logging
-import utilityFunctions as utilityFunctions
+import toolbox as toolbox
 import RNG
 
 air_like = [0, 6, 17, 18, 30, 31, 32, 37, 38, 39, 40, 59, 81, 83, 85, 104, 105, 106, 107, 111, 141, 142, 161, 162, 175, 78, 79, 99]
@@ -31,7 +31,7 @@ def findFullTree(matrix, height_map, h, xt, zt):
 		visited = []
 		block_to_expand_queue = [(xt, zt)]
 		new_block_queue = []
-		tree_block.append((h+height_tree, xt, zt, utilityFunctions.getBlockFullValue(matrix, h+height_tree, xt, zt)))
+		tree_block.append((h+height_tree, xt, zt, toolbox.getBlockFullValue(matrix, h+height_tree, xt, zt)))
 		if height_tree < 12:
 			while distance <= 3: #go through the level and find the leaves without going too far
 				while len(block_to_expand_queue) != 0:
@@ -54,7 +54,7 @@ def findFullTree(matrix, height_map, h, xt, zt):
 	visited = []
 	block_to_expand_queue = [(xt, zt)]
 	new_block_queue = []
-	tree_block.append((h+height_tree, xt, zt, utilityFunctions.getBlockFullValue(matrix, h+height_tree, xt, zt)))
+	tree_block.append((h+height_tree, xt, zt, toolbox.getBlockFullValue(matrix, h+height_tree, xt, zt)))
 	while distance <= 3:
 		while len(block_to_expand_queue) != 0:
 			actual_block = block_to_expand_queue.pop()
@@ -71,10 +71,10 @@ def addSameLevelTreeBlockToQueue(matrix, h, new_block_queue, visited, tree_block
 		neighbor_block = (actual_block[0] + neighbor_position[0], actual_block[1] + neighbor_position[1])
 		try:
 			if neighbor_block not in visited and matrix.getValue(h, neighbor_block[0], neighbor_block[1]) in leaf_like+[78] and abs(xt-neighbor_block[0])<=2 and abs(zt-neighbor_block[1])<=2:
-				tree_block.append((h, neighbor_block[0], neighbor_block[1], utilityFunctions.getBlockFullValue(matrix, h, neighbor_block[0], neighbor_block[1])))
+				tree_block.append((h, neighbor_block[0], neighbor_block[1], toolbox.getBlockFullValue(matrix, h, neighbor_block[0], neighbor_block[1])))
 				new_block_queue.append(neighbor_block)
 			elif neighbor_block not in visited and matrix.getValue(h, neighbor_block[0], neighbor_block[1]) in trunk_like and abs(xt-neighbor_block[0])<=1 and abs(zt-neighbor_block[1])<=1:
-				tree_block.append((h, neighbor_block[0], neighbor_block[1], utilityFunctions.getBlockFullValue(matrix, h, neighbor_block[0], neighbor_block[1])))
+				tree_block.append((h, neighbor_block[0], neighbor_block[1], toolbox.getBlockFullValue(matrix, h, neighbor_block[0], neighbor_block[1])))
 				new_block_queue.append(neighbor_block)
 		except:
 			continue
@@ -88,7 +88,7 @@ def putBackTrees(matrix, height_map, tree_list): #go through the list saved and 
 
 def checkIfTreeUntouched(matrix, tree): #check that nothing was built on the position of the tree's blocks
 	for h, x, z, i in tree:
-		if utilityFunctions.getBlockFullValue(matrix, h, x, z) != (0,0):
+		if toolbox.getBlockFullValue(matrix, h, x, z) != (0,0):
 			return False
 	return True
 
@@ -110,7 +110,7 @@ def checkIfGroundValid(matrix, height_map, tree): #check that the tree is not ab
 	for x in range(min_x, max_x+1):
 		for z in range(min_z, max_z+1):
 			try:
-				(b, d) = utilityFunctions.getBlockFullValue(matrix, height_map[x][z], x, z)
+				(b, d) = toolbox.getBlockFullValue(matrix, height_map[x][z], x, z)
 				if height_map[x][z] == -1 or (b, d) == (1,6) or b in [27, 28, 66, 157, 17, 208]:
 					return False
 			except:
@@ -144,7 +144,7 @@ def findFullAcacia(matrix, height_map, h, xt, zt):
 		visited = []
 		block_to_expand_queue = [(h+height_tree, xt, zt)]
 		new_block_queue = []
-		tree_block.append((h+height_tree, xt, zt, utilityFunctions.getBlockFullValue(matrix, h+height_tree, xt, zt)))
+		tree_block.append((h+height_tree, xt, zt, toolbox.getBlockFullValue(matrix, h+height_tree, xt, zt)))
 		while distance <= 5: #go through the level and find the leaves without going too far
 			while len(block_to_expand_queue) != 0:
 				actual_block = block_to_expand_queue.pop()
@@ -158,7 +158,7 @@ def findFullAcacia(matrix, height_map, h, xt, zt):
 	visited = []
 	block_to_expand_queue = [(h+height_tree, xt, zt)]
 	new_block_queue = []
-	tree_block.append((h+height_tree, xt, zt, utilityFunctions.getBlockFullValue(matrix, h+height_tree, xt, zt)))
+	tree_block.append((h+height_tree, xt, zt, toolbox.getBlockFullValue(matrix, h+height_tree, xt, zt)))
 	while distance <= 5:
 		while len(block_to_expand_queue) != 0:
 			actual_block = block_to_expand_queue.pop()
@@ -175,10 +175,10 @@ def addSameLevelAcaciaBlockToQueue(matrix, h, new_block_queue, visited, tree_blo
 		neighbor_block = (actual_block[0] + neighbor_position[0], actual_block[1] + neighbor_position[1], actual_block[2] + neighbor_position[2])
 		try:
 			if neighbor_block not in visited and matrix.getValue(neighbor_block[0], neighbor_block[1], neighbor_block[2]) == 161 and abs(xt-neighbor_block[1])<=4 and abs(zt-neighbor_block[2])<=4:
-				tree_block.append((neighbor_block[0], neighbor_block[1], neighbor_block[2], utilityFunctions.getBlockFullValue(matrix, neighbor_block[0], neighbor_block[1], neighbor_block[2])))
+				tree_block.append((neighbor_block[0], neighbor_block[1], neighbor_block[2], toolbox.getBlockFullValue(matrix, neighbor_block[0], neighbor_block[1], neighbor_block[2])))
 				new_block_queue.append(neighbor_block)
 			elif neighbor_block not in visited and matrix.getValue(neighbor_block[0], neighbor_block[1], neighbor_block[2]) == 162 and abs(xt-neighbor_block[1])<=1 and abs(zt-neighbor_block[2])<=1:
-				tree_block.append((neighbor_block[0], neighbor_block[1], neighbor_block[2], utilityFunctions.getBlockFullValue(matrix, neighbor_block[0], neighbor_block[1], neighbor_block[2])))
+				tree_block.append((neighbor_block[0], neighbor_block[1], neighbor_block[2], toolbox.getBlockFullValue(matrix, neighbor_block[0], neighbor_block[1], neighbor_block[2])))
 				new_block_queue.append(neighbor_block)
 		except:
 			continue
@@ -186,8 +186,8 @@ def addSameLevelAcaciaBlockToQueue(matrix, h, new_block_queue, visited, tree_blo
 
 def countTreeSpecies(tree_list):
 	count = {"oak" : 0, "spruce" : 0, "birch" : 0, "jungle" : 0, "dark_oak" : 0, "acacia" : 0}
-	log = utilityFunctions.getBlockID("log")
-	log2 = utilityFunctions.getBlockID("log2")
+	log = toolbox.getBlockID("log")
+	log2 = toolbox.getBlockID("log2")
 	for tree in tree_list:
 		for blocks in tree[0]:
 			if blocks[3][0] == log[0]:

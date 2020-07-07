@@ -1,30 +1,32 @@
 import logging
-import utilityFunctions as utilityFunctions
+import toolbox as toolbox
 air_like = [0, 6, 17, 18, 30, 31, 32, 37, 38, 39, 40, 59, 81, 83, 85, 104, 105, 106, 107, 111, 141, 142, 161, 162, 175, 78, 79, 99]
 water_like = [8, 9, 10, 11]
 
 def generateBridge(matrix, height_map, p1, p2, bridge_Type): #generate a bridge between p1 and p2
+	logger = logging.getLogger("bridge")
+
 	if bridge_Type == "Wood":
-		bridge_Middle_Bottom = (126,5)
-		bridge_Middle_Top = (126,13)
-		bridge_Middle_Double = (125,5)
-		bridge_Side_Bottom = (44,2)
-		bridge_Side_Top = (44,10)
-		bridge_Side_Double = (43,10)
-		bridge_Base = (208,0)
-		pillar_Base = (17,0)
-		pillar = (85,0)
+		bridge_Middle_Bottom = toolbox.getBlockID("wooden_slab", 5)
+		bridge_Middle_Top = toolbox.getBlockID("wooden_slab", 13)
+		bridge_Middle_Double = toolbox.getBlockID("double_wooden_slab", 5)
+		bridge_Side_Bottom = toolbox.getBlockID("stone_slab", 2)
+		bridge_Side_Top = toolbox.getBlockID("stone_slab", 10)
+		bridge_Side_Double = toolbox.getBlockID("double_stone_slab", 10)
+		bridge_Base = toolbox.getBlockID("grass_path")
+		pillar_Base = toolbox.getBlockID("log")
+		pillar = toolbox.getBlockID("oak_fence")
 
 	elif bridge_Type == "Stone":
-		bridge_Middle_Bottom = (44,5)
-		bridge_Middle_Top = (44,13)
-		bridge_Middle_Double = (43,5)
-		bridge_Side_Bottom = (44,0)
-		bridge_Side_Top = (44,8)
-		bridge_Side_Double = (43,0)
-		bridge_Base = (1,6)
-		pillar_Base = (4,0)
-		pillar = (139,0)
+		bridge_Middle_Bottom = toolbox.getBlockID("stone_slab", 5)
+		bridge_Middle_Top = toolbox.getBlockID("stone_slab", 13)
+		bridge_Middle_Double = toolbox.getBlockID("double_wooden_slab", 5)
+		bridge_Side_Bottom = toolbox.getBlockID("stone_slab")
+		bridge_Side_Top = toolbox.getBlockID("stone_slab", 8)
+		bridge_Side_Double = toolbox.getBlockID("double_wooden_slab")
+		bridge_Base = toolbox.getBlockID("stone", 6)
+		pillar_Base = toolbox.getBlockID("cobblestone")
+		pillar = toolbox.getBlockID("cobblestone_wall")
 
 	def getPathBridge(matrix, p1, p2): #find a path to link p1 to p2
 		path_bridge = []
@@ -126,7 +128,7 @@ def generateBridge(matrix, height_map, p1, p2, bridge_Type): #generate a bridge 
 						barrierPut = True
 
 	def fillUnder(matrix, h, x, z): #put blocks under the position if there is air
-		(b, d) = utilityFunctions.getBlockFullValue(matrix, h, x, z)
+		(b, d) = toolbox.getBlockFullValue(matrix, h, x, z)
 		if (b, d) == bridge_Middle_Top:
 			matrix.setValue(h, x, z, bridge_Middle_Double)
 		elif (b, d) == bridge_Side_Top:
@@ -143,7 +145,7 @@ def generateBridge(matrix, height_map, p1, p2, bridge_Type): #generate a bridge 
 			h += 1
 
 	def setIfCorrect(matrix, h, x, z, i): #put block only if the position given is correct
-		(b,d) = utilityFunctions.getBlockFullValue(matrix, h-1, x, z)
+		(b,d) = toolbox.getBlockFullValue(matrix, h-1, x, z)
 		if matrix.getValue(h, x, z) in air_like and (b,d) not in [bridge_Side_Double,bridge_Side_Top,bridge_Side_Bottom,bridge_Middle_Double,bridge_Middle_Top,bridge_Middle_Bottom]:
 			matrix.setValue(h, x, z, i)
 
@@ -210,7 +212,7 @@ def generateBridge(matrix, height_map, p1, p2, bridge_Type): #generate a bridge 
 			setIfCorrect(matrix, h, path_bridge[i][0]-x_val, path_bridge[i][1]-z_val, bridge_Side_Double)
 			setIfCorrect(matrix, h, path_bridge[i][0]+x_val, path_bridge[i][1]+z_val, bridge_Side_Double)
 
-	logging.info("Trying to generate bridge between {} and {}".format(p1, p2))
+	logger.info("Trying to generate Bridge between {} and {}".format(p1, p2))
 	#finding height
 	h1 = height_map[p1[0]][p1[1]]
 	h2 = height_map[p2[0]][p2[1]]
@@ -223,13 +225,13 @@ def generateBridge(matrix, height_map, p1, p2, bridge_Type): #generate a bridge 
 		max_point = p1
 
 	#get the path for the 2 sides of the bridge
-	logging.info("Get the path for the 2 sides of the bridge")
+	logger.info("Calculating the path for the 2 sides of the Bridge")
 	middlepoint = (int((p1[0]+p2[0])/2),(int((p1[1]+p2[1])/2)))
 	path_bridge1 = getPathBridge(matrix, p1, middlepoint) #first half
 	path_bridge2 = getPathBridge(matrix, p2, middlepoint) #second half
 
-	if utilityFunctions.getManhattanDistance(p1,p2) < 6:
-		logging.info("Length of the bridge = {}, Bridge too small, building a small one".format(utilityFunctions.getManhattanDistance(p1,p2)))
+	if toolbox.getManhattanDistance(p1,p2) < 6:
+		logger.info("Bridge too small with length : {}, generating a small one".format(toolbox.getManhattanDistance(p1, p2)))
 		buildSmallBridge(matrix, path_bridge1, height_map[max_point[0]][max_point[1]])
 		buildSmallBridge(matrix, path_bridge2, height_map[max_point[0]][max_point[1]])
 
@@ -240,16 +242,16 @@ def generateBridge(matrix, height_map, p1, p2, bridge_Type): #generate a bridge 
 
 		#check if the normal bridge is buildable
 		if height_map[min_point[0]][min_point[1]] + len(path_bridge1)*0.5 >= h_bridge:
-			logging.info("Length of the bridge = {}, enough to go up on both sides, building a normal bridge".format(utilityFunctions.getManhattanDistance(p1,p2)))
+			logger.info("Bridge size enough to go up on both sides with length : {}, generating a normal bridge".format(toolbox.getManhattanDistance(p1, p2)))
 			#build the bridge
 			buildBridge(matrix, path_bridge1, h_bridge, h1+1, True) #first part of the bridge
 			buildBridge(matrix, path_bridge2, h_bridge, h2+1 ,True) #second part
 		else: #bridge can't be built that way, going up only from one side
-			logging.info("Length of the bridge = {}, too small to go up on both sides, trying to go up only from the lowest point".format(utilityFunctions.getManhattanDistance(p1,p2)))
+			logger.info("Bridge too small to go up on both sides with length : {}, trying to go up only from the lowest point".format(toolbox.getManhattanDistance(p1, p2)))
 			path_bridge = getPathBridge(matrix, min_point, max_point) #full bridge
 			if height_map[min_point[0]][min_point[1]] + len(path_bridge)*0.5 >= height_map[max_point[0]][max_point[1]]: #check if the difference of height is still too big
-				logging.info("Bridge buildable from one side")
+				logger.info("Bridge buildable from one side")
 				buildBridge(matrix, path_bridge, max(h1,h2), min(h1,h2)+1, False)
 			else:
-				logging.info("Bridge non buildable")
-				raise ValueError('Bridge non buildable')
+				logger.error("Bridge not buildable, cancel generation")
+				raise ValueError('Bridge not buildable')

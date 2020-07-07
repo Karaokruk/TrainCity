@@ -1,7 +1,8 @@
 import logging
-import utilityFunctions as utilityFunctions
+import toolbox as toolbox
+import utility as utility
 
-IDs = utilityFunctions.IDs
+IDs = utility.IDs
 air_like = [IDs["air"], IDs["water"], IDs["log"], IDs["leaves"], IDs["web"], IDs["tallgrass"], IDs["deadbush"],  IDs["yellow_flower"], IDs["flower"], IDs["brown_mushroom"], IDs["red_mushroom"], IDs["wheat"], IDs["cactus"], IDs["reeds"], IDs["oak_fence"], IDs["melon_block"], IDs["pumpkin_stem"], IDs["melon_stem"], IDs["vine"], IDs["oak_fence_gate"], IDs["waterlily"], IDs["carrots"], IDs["potatoes"], IDs["leaves2"], IDs["log2"], IDs["double_plant"], IDs["snow"], IDs["ice"]]
 ground_like = [IDs["stone"], IDs["grass"], IDs["dirt"]]
 water_like = [IDs["flowing_water"], IDs["water"], IDs["flowing_lava"], IDs["lava"]]
@@ -9,33 +10,33 @@ light_pillar_like = [IDs["oak_fence"],  IDs["cobblestone_wall"], IDs["redstone_l
 
 def generatePath_StraightLine(matrix, x_p1, z_p1, x_p2, z_p2, height_map, pavement_Type):
 	if pavement_Type == "Grass":
-		pavement_Block = utilityFunctions.getBlockID("grass_path")
-		light_Pillar = utilityFunctions.getBlockID("oak_fence")
+		pavement_Block = toolbox.getBlockID("grass_path")
+		light_Pillar = toolbox.getBlockID("oak_fence")
 	elif pavement_Type == "Stone":
-		pavement_Block = utilityFunctions.getBlockID("stone", 6)
-		light_Pillar = utilityFunctions.getBlockID("cobblestone_wall")
+		pavement_Block = toolbox.getBlockID("stone", 6)
+		light_Pillar = toolbox.getBlockID("cobblestone_wall")
 
-	for x in utilityFunctions.twoway_range(x_p1, x_p2):
+	for x in toolbox.twoway_range(x_p1, x_p2):
 		h = height_map[x][z_p1]
 		h = matrix.getMatrixY(h)
 		matrix.setValue(h, x, z_p1, pavement_Block)
 
-	for z in utilityFunctions.twoway_range(z_p1, z_p2):
+	for z in toolbox.twoway_range(z_p1, z_p2):
 		h = height_map[x_p2][z]
 		h = matrix.getMatrixY(h)
 		matrix.setValue(h, x_p2, z, pavement_Block)
-		matrix.setValue(h + 1, x_p2, z, utilityFunctions.getBlockID("air"))
+		matrix.setValue(h + 1, x_p2, z, toolbox.getBlockID("air"))
 
 def generatePath(matrix, path, height_map, pavement_Type):
-	air = utilityFunctions.getBlockID("air")
+	air = toolbox.getBlockID("air")
 	if pavement_Type == "Grass":
-		pavement_Block = utilityFunctions.getBlockID("grass_path")
-		baseBlock = utilityFunctions.getBlockID("dirt")
-		light_Pillar = utilityFunctions.getBlockID("oak_fence")
+		pavement_Block = toolbox.getBlockID("grass_path")
+		baseBlock = toolbox.getBlockID("dirt")
+		light_Pillar = toolbox.getBlockID("oak_fence")
 	elif pavement_Type == "Stone":
-		pavement_Block = utilityFunctions.getBlockID("stone", 6)
-		baseBlock = utilityFunctions.getBlockID("stone")
-		light_Pillar = utilityFunctions.getBlockID("cobblestone_wall")
+		pavement_Block = toolbox.getBlockID("stone", 6)
+		baseBlock = toolbox.getBlockID("stone")
+		light_Pillar = toolbox.getBlockID("cobblestone_wall")
 
 	def fillUnderneath(matrix, y, x, z):
 		if y < 0: return
@@ -79,8 +80,8 @@ def generatePath(matrix, path, height_map, pavement_Type):
 		try:
 			matrix.setValue(h + 1, x, z, light_Pillar)
 			matrix.setValue(h + 2, x, z, light_Pillar)
-			matrix.setValue(h + 3, x, z, utilityFunctions.getBlockID("redstone_lamp"))
-			matrix.setEntity(h + 4, x, z, utilityFunctions.getBlockID("daylight_detector_inverted", 15), "daylight_detector")
+			matrix.setValue(h + 3, x, z, toolbox.getBlockID("redstone_lamp"))
+			matrix.setEntity(h + 4, x, z, toolbox.getBlockID("daylight_detector_inverted", 15), "daylight_detector")
 		except:
 			logging.info("Error when generating light at position : {}, {}, {}".format(h+1, x, z))
 
@@ -129,8 +130,8 @@ def generatePath(matrix, path, height_map, pavement_Type):
 
 
 		logging.info("Generating road at point ({}, {}, {})".format(h, x, z))
-		(b, d) = utilityFunctions.getBlockFullValue(matrix, h, x, z)
-		if (b, d) != utilityFunctions.getBlockID("stone", 6):
+		(b, d) = toolbox.getBlockFullValue(matrix, h, x, z)
+		if (b, d) != toolbox.getBlockID("stone", 6):
 			matrix.setValue(h, x, z, pavement_Block)
 			fillUnderneath(matrix, h - 1, x, z)
 			fillAbove(matrix, h + 1, x, z, 5)
@@ -213,11 +214,11 @@ def generatePath(matrix, path, height_map, pavement_Type):
 				elif orientation == "E": ladder_subID = 4
 				elif orientation == "W": ladder_subID = 5
 				for ladder_h in range(h + 1, next_h + 1):
-					matrix.setValue(ladder_h, x, z, utilityFunctions.getBlockID("ladder", ladder_subID))
+					matrix.setValue(ladder_h, x, z, toolbox.getBlockID("ladder", ladder_subID))
 					# make sure that the ladders in which the stairs are attached
 					# are pathblock and not dirt, etc
-					(b, d) = utilityFunctions.getBlockFullValue(matrix, ladder_h, next_block[0], next_block[1])
-					if (b, d) != utilityFunctions.getBlockID("ladder", 6):
+					(b, d) = toolbox.getBlockFullValue(matrix, ladder_h, next_block[0], next_block[1])
+					if (b, d) != toolbox.getBlockID("ladder", 6):
 						matrix.setValue(ladder_h, next_block[0], next_block[1], (pavement_Block))
 				block = matrix.getValue(next_h + 1, x, z)
 				if type(block) == tuple: block = block[0]
@@ -234,11 +235,11 @@ def generatePath(matrix, path, height_map, pavement_Type):
 				elif orientation == "E": ladder_subID = 5
 				elif orientation == "W": ladder_subID = 4
 				for ladder_h in range(next_h+1, h+1):
-					matrix.setValue(ladder_h, next_block[0], next_block[1], utilityFunctions.getBlockID("ladder", ladder_subID))
+					matrix.setValue(ladder_h, next_block[0], next_block[1], toolbox.getBlockID("ladder", ladder_subID))
 					# make sure that the ladders in which the stairs are attached
 					# are pathblock and not dirt, etc
-					(b, d) = utilityFunctions.getBlockFullValue(matrix, h, x, z)
-					if (b, d) != utilityFunctions.getBlockID("ladder", 6):
+					(b, d) = toolbox.getBlockFullValue(matrix, h, x, z)
+					if (b, d) != toolbox.getBlockID("ladder", 6):
 						matrix.setValue(ladder_h, x, z, (pavement_Block))
 				block = matrix.getValue(h + 1, x, z)
 				if type(block) == tuple: block = block[0]
