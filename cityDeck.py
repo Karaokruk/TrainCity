@@ -54,7 +54,8 @@ class CityDeck:
             self.neighbourhoodDeck.append("farm")
 
     def setCityType(self, size):
-        for i in range(0, size[0]):
+        self.centerDeck.append("building")
+        for i in range(1, size[0]):
             self.centerDeck.append("building")
         for i in range(0, size[1] // 3):
             self.neighbourhoodDeck.append("house")

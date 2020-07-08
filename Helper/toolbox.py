@@ -681,6 +681,7 @@ structure_scores = {
 	"house" : 0.4,
 	"farm" : 0.2,
 	"building" : 0.5,
+	"fountain" : 0.8,
 	"slope structure" : 1
 }
 def getStructureScore(name):

@@ -14,6 +14,7 @@ import Tower
 import Farm
 import RollerCoaster
 import TrainLine
+import Fountain
 from Earthworks import prepareLot
 import TreeGestion
 import time
@@ -142,7 +143,9 @@ def perform(level, box, options):
 	#	all_buildings.append(building)
 
 	l = len(final_partitioning)
-	for i in range(l):
+	fountain = generateFountain(world, final_partitioning[0][1], height_map, simple_height_map)
+	all_buildings.append(fountain)
+	for i in range(1, l):
 		wood_material = TreeGestion.selectWoodFromTreeCounter(tree_counter)
 		logging.info("Wood material used : {}".format(wood_material))
 		score = i / (l * 1.0) # turns the result to float
@@ -377,6 +380,14 @@ def generateTrainLine(matrix, center, height_map, simple_height_map, wood_materi
 		toolbox.updateHeightMap(simple_height_map, x, x, z, z, -1)
 	return stations
 
+def generateFountain(matrix, p, height_map, simple_height_map):
+	logging.info("Generating a fountain in lot {}".format(p))
+	h = prepareLot(matrix, p, height_map, (43, 8))
+	building = Fountain.generateFountain(matrix, h, p[1], p[2], p[3], p[4], p[5])
+	toolbox.updateHeightMap(height_map, p[2] + 1, p[3] - 1, p[4] + 1, p[5] - 1, -1)
+	toolbox.updateHeightMap(simple_height_map, p[2] + 1, p[3] - 1, p[4] + 1, p[5] - 1, -1)
+	return building
+
 def generateStructureFromDeck(world, score, partition, height_map, simple_height_map, wood_material, cityDeck, deck_type = "neighbourhood"):
 	structure_type = cityDeck.popDeck(deck_type)
 	size = cityDeck.getSize()[0] if deck_type == "center" else cityDeck.getSize()[1]
@@ -389,6 +400,7 @@ def generateStructureFromDeck(world, score, partition, height_map, simple_height
 	logging.info("Generating a {} with lot score = {}".format(structure_type, score))
 	if   structure_type == "house" :			return generateHouse(world, partition, height_map, simple_height_map, wood_material)
 	elif structure_type == "building" :			return generateBuilding(world, partition, height_map, simple_height_map)
+	elif structure_type == "fountain" :			return generateFountain(world, partition, height_map, simple_height_map)
 	elif structure_type == "farm" :				return generateFarm(world, partition, height_map, simple_height_map, wood_material)
 	elif structure_type == "slope structure" :	return generateRollerCoaster(world, partition, height_map, simple_height_map, wood_material)
 	else:
