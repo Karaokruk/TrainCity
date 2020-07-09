@@ -6,8 +6,8 @@ import utility as utility
 ## - rail alone under CHECK
 ## - corner too low CHECK ?
 ## - path erases ladder CHECK
-## - path erases corner pillars
-## - generatePath generates infinte ladder under station
+## - path erases corner pillars CHECK
+## - generatePath generates infinte ladder under station CHECK
 ## - station on water CHECK
 ## - powered rails CHECK
 ## - multiple station generation CHECK
@@ -138,7 +138,7 @@ def generateTrainLine(matrix, wood_material, nb_stations, height_map, simple_hei
 		s.lotArea = toolbox.dotdict({"y_min": h_min, "y_max": h_max, "x_min": stations_coordinates[i][0] - 2, "x_max": stations_coordinates[i][0] + 2, "z_min": stations_coordinates[i][1] - 2, "z_max": stations_coordinates[i][1] + 2})
 		s.buildArea = toolbox.dotdict({"y_min": h_min, "y_max": h_max, "x_min": stations_coordinates[i][0], "x_max": stations_coordinates[i][0], "z_min": stations_coordinates[i][1], "z_max": stations_coordinates[i][1]})
 		s.orientation = "S"
-		s.entranceLot = (s.buildArea.x_min, s.buildArea.z_min)
+		s.entranceLot = (s.lotArea.x_min + 1, s.lotArea.z_min)
 		stations.append(s)
 		logger.info("Generating station {}".format(i + 1))
 		generateStation(matrix, wooden_materials_kit, simple_height_map, train_line_height_map, stations_coordinates[i][0], stations_coordinates[i][1], stations_coordinates[i][2])

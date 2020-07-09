@@ -593,21 +593,21 @@ def updateHeightMap(height_map, x_min, x_max, z_min, z_max, height):
 
 def cleanProperty(matrix, h_min, h_max, x_min, x_max, z_min, z_max):
 	for h in range(h_min, h_max):
-		for x in range(x_min, x_max+1):
-			for z in range(z_min, z_max+1):
-				matrix.setValue(h,x,z, (0,0))
+		for x in range(x_min, x_max + 1):
+			for z in range(z_min, z_max + 1):
+				matrix.setValue(h, x, z, getBlockID("air"))
 
 # algorithm to randomly find flat areas given a height map
 def getAreasSameHeight(box,terrain):
 	validAreas = []
 
 	for i in range(0, 1000):
-		random_x = RNG.randint(0, box.maxx-box.minx)
-		random_z = RNG.randint(0,box.maxz-box.minz)
+		random_x = RNG.randint(0, box.maxx - box.minx)
+		random_z = RNG.randint(0, box.maxz - box.minz)
 		size_x = 15
 		size_z = 15
-		if checkSameHeight(terrain, 0, box.maxx-box.minx, 0,box.maxz-box.minz, random_x, random_z, size_x, size_z):
-			newValidArea = (random_x, random_x+size_x-1, random_z, random_z+size_z-1)
+		if checkSameHeight(terrain, 0, box.maxx - box.minx, 0,box.maxz - box.minz, random_x, random_z, size_x, size_z):
+			newValidArea = (random_x, random_x + size_x-1, random_z, random_z + size_z - 1)
 			if newValidArea not in validAreas:
 				validAreas.append(newValidArea)
 
