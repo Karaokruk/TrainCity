@@ -12,6 +12,7 @@ IDs = {
 	"log" : 17,
 	"leaves" : 18,
 	"glass" : 20,
+	"lapis_block" : 22,
 	"bed" : 26,
 	"golden_rail" : 27,
 	"detector_rail" : 28,
